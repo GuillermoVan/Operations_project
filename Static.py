@@ -17,22 +17,30 @@ class ACP:
         self.set_objective()
 
     def create_passenger_flow(self):
-        d = {(j, t): max(0, 25 - 5 * abs(t - 6) + j * 3) for j in range(self.J) for t in range(self.N)} #mock version of d
-        for j, t in self.flight_schedule.items():
-            pass
+        d = {}
+        for j, departure_time in self.flight_schedule.items():
+            # Passengers start checking in up to 4 intervals before the flight and stop checking in after departure.
+            start_time = max(departure_time - 4, 0)  # No earlier than the start of the day
+            for t in range(self.N):
+                if start_time <= t < departure_time:
+                    # Assuming a linear decrease in the number of arriving passengers as the time approaches departure
+                    passengers = max(0, (departure_time - t) * 10)  # 10 passengers per interval before the flight, decreasing
+                else:
+                    passengers = 0
+                d[(j, t)] = passengers
         return d
 
     def initialize_data(self):
         # Costs and demands
         self.p = {j: 2 for j in range(self.J)}  # Service time per passenger for a specific aircraft
         self.d = self.d
-        self.C = {t: 5 for t in range(self.N)}  # Desks available per interval
+        self.C = {t: 15 for t in range(self.N)}  # Desks available per interval
         self.I0 = {j: 30 for j in range(self.J)}  # Number of passengers waiting before desk opening per flight
         self.s = {j: 100 + 10 * j for j in range(self.J)}  # Desk opening costs for flight j
         self.h = {j: 5 + j for j in range(self.J)}  # Queue costs
 
         # Tj calculation
-        early_limit = 3 / self.l  # passengers can not check-in before 3 hours in advance of departure
+        early_limit = 4 / self.l  # passengers can not check-in before 4 hours in advance of departure
         late_limit = 0.75 / self.l  # passengers can not check-in after 45 minutes before departure
         Tj = dict()
         for j, t in flight_schedule.items():
@@ -64,12 +72,9 @@ class ACP:
         self.model.addConstrs((sum(self.q[j, t] * self.p[j] for j in range(self.J)) <= self.C[t]
                                for t in range(self.N)), "CapacityLimit")
 
-        #No passengers in queue outside of check-in times
-        self.model.addConstrs((self.I[j, t] == 0
+        #No passengers can ENTER queue when they are outside the check-in limits
+        self.model.addConstrs((self.q[j, t] == 0
                                for j in range(self.J) for t in self.Tj), "CheckIn-Times")
-
-
-
 
     def set_objective(self):
         # Objective function
@@ -78,8 +83,8 @@ class ACP:
 
     def optimize(self):
         # Optimize the model
+        self.model.setParam('OutputFlag', True)  # Enable detailed Gurobi output
         self.model.optimize()
-
         # Output results
         if self.model.status == GRB.OPTIMAL:
             for v in self.model.getVars():
@@ -96,11 +101,14 @@ class ACP:
 
 '''
 model_name options: "static_ACP", "dynamic_ACP" -> only static works for now
-EXAMPLE flight_schedule = {0: 4, 1: 8, 2: 1, 3:...}
 '''
 
 # Example usage:
-flight_schedule = {0: 48, 1: 60, 2: 65}
+flight_schedule = {
+    0: 16,   # Flight 0 departs at interval 16 (4 hours into the day)
+    1: 48,   # Flight 1 departs at interval 48 (12 hours into the day)
+    2: 80    # Flight 2 departs at interval 80 (20 hours into the day)
+}
 
 if __name__ == "__main__":
     acp_optimization = ACP("static_ACP", 24, 0.25, flight_schedule)
