@@ -142,7 +142,3 @@ def get_d_and_T():
 
 	T = get_T()
 	return d, T
-
-d, T = get_d_and_T()
-print(d)
-#print(T)
