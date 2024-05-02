@@ -1,15 +1,33 @@
 from gurobipy import Model, GRB
-
+from data import get_d_and_T
 
 class ACP:
-    def __init__(self, model_name, T, l, flight_schedule):
+    def __init__(self, model_name, T, l, parameter_settings, flight_schedule=None, schiphol_case=False):
         self.model = Model(model_name)
         self.T = T  # Total time window [hrs]
         self.l = l  # Length of the considered time interval [hrs]
         self.N = int(self.T // self.l)  # Number of intervals
-        self.flight_schedule = flight_schedule  # Dictionary of flight index as key and interval index as departure time in timewindow T
-        self.J = len(flight_schedule)  # Total number of flights in T
-        self.d = self.create_passenger_flow()
+        self.schiphol_case = schiphol_case
+        self.parameter_settings = parameter_settings
+
+        if self.schiphol_case is False:
+            self.flight_schedule = flight_schedule  # Dictionary of flight index as key and interval index as departure time in timewindow T
+            self.J = len(flight_schedule)  # Total number of flights in T
+            self.d = self.create_passenger_flow()
+            #Tj calculation
+            early_limit = 4 / self.l  # passengers can not check-in before 4 hours in advance of departure
+            late_limit = 0.75 / self.l  # passengers can not check-in after 45 minutes before departure
+            Tj = dict()
+            for j, t in self.flight_schedule.items():
+                earliest_checkin_index = int(t - early_limit)
+                latest_checkin_index = int(t - late_limit)
+                non_checkin_intervals = set(range(earliest_checkin_index)) | set(
+                    range(latest_checkin_index + 1, self.N))
+                Tj[j] = non_checkin_intervals
+            self.Tj = Tj  # For each flight j the set of time intervals in which it is not possible to check in
+        else:
+            self.d, self.Tj = get_d_and_T()
+            self.J = len(self.Tj)
 
         self.initialize_data()
         self.setup_decision_variables()
@@ -18,37 +36,18 @@ class ACP:
 
     def create_passenger_flow(self):
         d = {}
-        for j, departure_time in self.flight_schedule.items():
-            # Passengers start checking in up to 4 intervals before the flight and stop checking in after departure.
-            start_time = max(departure_time - 4, 0)  # No earlier than the start of the day
-            for t in range(self.N):
-                if start_time <= t < departure_time:
-                    # Assuming a linear decrease in the number of arriving passengers as the time approaches departure
-                    passengers = max(0, (departure_time - t) * 10)  # 10 passengers per interval before the flight, decreasing
-                else:
-                    passengers = 0
-                d[(j, t)] = passengers
+
+        #ToDo: CREATE A FUNCTION THAT CREATES DISTRIBUTION BASED ON A SELF.FLIGHT_SCHEDULE
+
         return d
 
     def initialize_data(self):
         # Costs and demands
-        self.p = {j: 2 for j in range(self.J)}  # Service time per passenger for a specific aircraft
-        self.d = self.d
-        self.C = {t: 15 for t in range(self.N)}  # Desks available per interval
-        self.I0 = {j: 30 for j in range(self.J)}  # Number of passengers waiting before desk opening per flight
-        self.s = {j: 100 + 10 * j for j in range(self.J)}  # Desk opening costs for flight j
-        self.h = {j: 5 + j for j in range(self.J)}  # Queue costs
-
-        # Tj calculation
-        early_limit = 4 / self.l  # passengers can not check-in before 4 hours in advance of departure
-        late_limit = 0.75 / self.l  # passengers can not check-in after 45 minutes before departure
-        Tj = dict()
-        for j, t in flight_schedule.items():
-            earliest_checkin_index = int(t - early_limit)
-            latest_checkin_index = int(t - late_limit)
-            non_checkin_intervals = set(range(earliest_checkin_index)) | set(range(latest_checkin_index + 1, self.N))
-            Tj[j] = non_checkin_intervals
-        self.Tj = Tj # For each flight j the set of time intervals in which it is not possible to check in
+        self.p = {j: parameter_settings['p'] for j in range(self.J)}  # Service time per passenger for a specific aircraft [hrs]
+        self.C = {t: parameter_settings['C'] for t in range(self.N)}  # Desks available per interval
+        self.I0 = {j: parameter_settings['I0'] for j in range(self.J)}  # Number of passengers waiting before desk opening per flight
+        self.s = {j: parameter_settings['s0'] + 10 * j for j in range(self.J)}  # Desk opening costs for flight j
+        self.h = {j: parameter_settings['h0'] + j for j in range(self.J)}  # Queue costs
 
     def setup_decision_variables(self):
         # Decision variables
@@ -72,9 +71,9 @@ class ACP:
         self.model.addConstrs((sum(self.q[j, t] * self.p[j] for j in range(self.J)) <= self.C[t]
                                for t in range(self.N)), "CapacityLimit")
 
-        #No passengers can ENTER queue when they are outside the check-in limits
+        #No passengers can ENTER queue when they are outside the check-in limits -> should actually be changed to I
         self.model.addConstrs((self.q[j, t] == 0
-                               for j in range(self.J) for t in self.Tj), "CheckIn-Times")
+                               for j in range(self.J) for t in self.Tj[j]), "CheckIn-Times")
 
     def set_objective(self):
         # Objective function
@@ -99,6 +98,11 @@ class ACP:
         else:
             print("Optimization ended with status ", self.model.Status)
 
+    def plot_queue(self):
+
+        #ToDo: plot amount of passengers in queue as function of time
+
+        return
 '''
 model_name options: "static_ACP", "dynamic_ACP" -> only static works for now
 '''
@@ -110,6 +114,11 @@ flight_schedule = {
     2: 80    # Flight 2 departs at interval 80 (20 hours into the day)
 }
 
+parameter_settings = {'p': 1.5/60, 'C': 15, 'I0': 30, 's0': 100, 'h0': 5}
+
 if __name__ == "__main__":
-    acp_optimization = ACP("static_ACP", 24, 0.25, flight_schedule)
-    acp_optimization.optimize()
+    #acp_optimization = ACP(model_name="static_ACP", T=24, l=1/12, parameter_settings=parameter_settings, flight_schedule=flight_schedule)
+    acp_optimization_schiphol = ACP(model_name="static_ACP", T=24, l=1/12, parameter_settings=parameter_settings, schiphol_case=True)
+
+    #acp_optimization.optimize()
+    acp_optimization_schiphol.optimize()
