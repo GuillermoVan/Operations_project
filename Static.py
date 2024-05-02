@@ -1,8 +1,8 @@
 from gurobipy import Model, GRB
-from data import get_d_and_T
+from data import *
 
 class ACP:
-    def __init__(self, model_name, T, l, parameter_settings, flight_schedule=None, schiphol_case=False):
+    def __init__(self, model_name, T, l, parameter_settings, flight_schedule=None, data_schiphol=None, schiphol_case=False):
         self.model = Model(model_name)
         self.T = T  # Total time window [hrs]
         self.l = l  # Length of the considered time interval [hrs]
@@ -26,7 +26,7 @@ class ACP:
                 Tj[j] = non_checkin_intervals
             self.Tj = Tj  # For each flight j the set of time intervals in which it is not possible to check in
         else:
-            self.d, self.Tj = get_d_and_T()
+            self.d, self.Tj = data_schiphol.d, data_schiphol.T
             self.J = len(self.Tj)
 
         self.initialize_data()
@@ -118,7 +118,7 @@ parameter_settings = {'p': 1.5/60, 'C': 15, 'I0': 30, 's0': 100, 'h0': 5}
 
 if __name__ == "__main__":
     #acp_optimization = ACP(model_name="static_ACP", T=24, l=1/12, parameter_settings=parameter_settings, flight_schedule=flight_schedule)
-    acp_optimization_schiphol = ACP(model_name="static_ACP", T=24, l=1/12, parameter_settings=parameter_settings, schiphol_case=True)
+    acp_optimization_schiphol = ACP(model_name="static_ACP", T=24, l=1/12, parameter_settings=parameter_settings, data_schiphol=data(), schiphol_case=True)
 
     #acp_optimization.optimize()
     acp_optimization_schiphol.optimize()

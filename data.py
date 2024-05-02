@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-# Used chat_gpt to help write parts of this class since it is just used for data generation
+
 class data:
 	def __init__(self, airline = 'KLM', t_interval = 5, tot_m = 24*60, mean_early_t = 120, arrival_std = 2, last_checkin = 45, earliest_checkin = 4*60, data_loc = 'data 30_04_2024.xlsx'):
 		self.airline = airline
@@ -17,8 +17,8 @@ class data:
 		self.flights = None #Flights for the selected airline
 
 		self.prep_data()
-		self.d = self.get_d
-		self.T = self.get_T
+		self.d = self.get_d()
+		self.T = self.get_T()
 
 	def prep_data(self):
 		self.organize_rows()
