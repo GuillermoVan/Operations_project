@@ -1,8 +1,10 @@
 from gurobipy import Model, GRB
 from data import *
+import numpy as np
 
 class ACP:
     def __init__(self, model_name, T, l, parameter_settings, flight_schedule=None, data_schiphol=None, schiphol_case=False):
+        self.model_name = model_name
         self.model = Model(model_name)
         self.T = T  # Total time window [hrs]
         self.l = l  # Length of the considered time interval [hrs]
@@ -44,13 +46,27 @@ class ACP:
     def initialize_data(self):
         # Costs and demands
         self.p = {j: parameter_settings['p'] for j in range(self.J)}  # Service time per passenger for a specific aircraft [hrs]
-        self.C = {t: parameter_settings['C'] for t in range(self.N)}  # Desks available per interval
+        if self.model_name == "static_ACP":
+            self.C = {t: parameter_settings['C'] for t in range(self.N)}  # Desks available per interval
+        else:
+            self.s = {t: parameter_settings['s'] for t in range(self.N)}  # Desk opening costs for time t
+            A = np.zeros((self.J, self.N))
+            for key,value in self.Tj.items():
+                for time in list(value):
+                    A[int(key), int(time)] = 1
+            self.A = A
+            self.l = self.parameter_settings['l']
+
+
+
         self.I0 = {j: parameter_settings['I0'] for j in range(self.J)}  # Number of passengers waiting before desk opening per flight
-        self.s = {j: parameter_settings['s0'] + 10 * j for j in range(self.J)}  # Desk opening costs for flight j
+        self.s = {j: parameter_settings['s'] for j in range(self.J)}  # Desk opening costs for flight j
         self.h = {j: parameter_settings['h0'] + j for j in range(self.J)}  # Queue costs
 
     def setup_decision_variables(self):
         # Decision variables
+        if self.model_name == "dynamic_ACP":
+            self.C =  self.model.addVars(self.N, vtype=GRB.INTEGER, name="C") #number of desks to be assigned in interval t
         self.q = self.model.addVars(self.J, self.N, vtype=GRB.INTEGER, name="q")
         self.x = self.model.addVars(self.J, self.N, vtype=GRB.BINARY, name="x")
         self.I = self.model.addVars(self.J, self.N, vtype=GRB.INTEGER, name="I")
@@ -63,22 +79,37 @@ class ACP:
         self.model.addConstrs((self.I[j, t] == (self.I[j, t - 1] + self.d[j, t] - self.q[j, t])
                                for j in range(self.J) for t in range(1, self.N)), "QueueDynamics")
 
-        # Check-in limits
-        self.model.addConstrs((self.q[j, t] * self.p[j] <= self.C[t]
-                               for j in range(self.J) for t in range(self.N)), "CheckInLimit")
-
-        # Capacity limits
-        self.model.addConstrs((sum(self.q[j, t] * self.p[j] for j in range(self.J)) <= self.C[t]
-                               for t in range(self.N)), "CapacityLimit")
-
         #No passengers can ENTER queue when they are outside the check-in limits -> should actually be changed to I
         self.model.addConstrs((self.q[j, t] == 0
                                for j in range(self.J) for t in self.Tj[j]), "CheckIn-Times")
 
+        if self.model_name == "dynamic_ACP":
+            #Dynamic capacity limits
+            self.model.addConstrs((sum(self.q[j, t] * self.p[j] for j in range(self.J)) <= self.l * self.C[t]
+                                   for t in range(self.N)), "CapacityLimit_dynamic")
+
+            #All passengers accepted in time frame -> maybe delete, because passengers can arrive too late
+            self.model.addConstrs((self.A[j, t] * self.q[j, t] == 0
+                                   for j in range(self.J) for t in range(self.N)), "All_pax_in_timeframe")
+        else:
+            # Capacity limits
+            self.model.addConstrs((sum(self.q[j, t] * self.p[j] for j in range(self.J)) <= self.C[t]
+                                   for t in range(self.N)), "CapacityLimit")
+            # Check-in limits
+            self.model.addConstrs((self.q[j, t] * self.p[j] <= self.C[t]
+                                   for j in range(self.J) for t in range(self.N)), "CheckInLimit")
+
+
+
+
     def set_objective(self):
         # Objective function
-        self.model.setObjective(sum(self.h[j] * self.I[j, t] + self.s[j] * self.x[j, t]
-                                    for j in range(self.J) for t in range(self.N)), GRB.MINIMIZE)
+        if self.model_name == "static_ACP":
+            self.model.setObjective(sum(self.h[j] * self.I[j, t] + self.s[j] * self.x[j, t]
+                                        for j in range(self.J) for t in range(self.N)), GRB.MINIMIZE)
+        else:
+            self.model.setObjective(sum(self.h[j] * self.I[j, t] + self.s[t] * self.C[t]
+                                        for j in range(self.J) for t in range(self.N)), GRB.MINIMIZE)
 
     def optimize(self):
         # Optimize the model
@@ -109,16 +140,26 @@ model_name options: "static_ACP", "dynamic_ACP" -> only static works for now
 
 # Example usage:
 flight_schedule = {
-    0: 16,   # Flight 0 departs at interval 16 (4 hours into the day)
-    1: 48,   # Flight 1 departs at interval 48 (12 hours into the day)
-    2: 80    # Flight 2 departs at interval 80 (20 hours into the day)
+    0: 16,   # Flight 0 departs at interval 16
+    1: 48,   # Flight 1 departs at interval 48
+    2: 80    # Flight 2 departs at interval 80
 }
 
-parameter_settings = {'p': 1.5/60, 'C': 15, 'I0': 30, 's0': 100, 'h0': 5}
+parameter_settings = {'p': 1.5/60, 'C': 1.5 * 20, 'I0': 30, 's': 100, 'h0': 5, 'l': 1.5/60}
 
 if __name__ == "__main__":
+    '''
+    STATIC APPROACH
+    '''
     #acp_optimization = ACP(model_name="static_ACP", T=24, l=1/12, parameter_settings=parameter_settings, flight_schedule=flight_schedule)
     acp_optimization_schiphol = ACP(model_name="static_ACP", T=24, l=1/12, parameter_settings=parameter_settings, data_schiphol=data(), schiphol_case=True)
-
     #acp_optimization.optimize()
     acp_optimization_schiphol.optimize()
+
+    '''
+    STATIC APPROACH
+    '''
+    #acp_optimization = ACP(model_name="dynamic_ACP", T=24, l=1/12, parameter_settings=parameter_settings, flight_schedule=flight_schedule)
+    #acp_optimization_schiphol = ACP(model_name="dynamic_ACP", T=24, l=1 / 12, parameter_settings=parameter_settings, data_schiphol=data(), schiphol_case=True)
+    #acp_optimization.optimize()
+    #acp_optimization_schiphol.optimize()
