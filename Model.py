@@ -47,8 +47,7 @@ class ACP:
         # 	2: (80, 50)  # Flight 2 departs at interval 80 (20 hours into the day)
         # }
 
-        flight_schedule = self.flight_schedule
-        d, too_early = data.flights_to_d(flight_schedule, t_interval, tot_m, mean_early_t, arrival_std, last_checkin, earliest_checkin)
+        d, too_early = data.flights_to_d(self.flight_schedule, t_interval, tot_m, mean_early_t, arrival_std, last_checkin, earliest_checkin)
         plot_data(d, too_early)
         return d
 
