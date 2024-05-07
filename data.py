@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
-
+import matplotlib.pyplot as plt
+from scipy.interpolate import make_interp_spline
 
 class data:
 	def __init__(self, airline = 'KLM', t_interval = 5, tot_m = 24*60, mean_early_t = 120, arrival_std = 2, last_checkin = 45, earliest_checkin = 4*60, data_loc = 'data 30_04_2024.xlsx'):
@@ -125,3 +126,79 @@ class data:
 					no_checkin_t.add(i)
 			T[index] = no_checkin_t
 		return T
+
+	@staticmethod
+	def flights_to_d(flight_schedule, t_interval = 5, tot_m = 24*60, mean_early_t = 2*60, arrival_std = 0.25, last_checkin = 35, earliest_checkin = 4*60):
+		# flight_schedule = {
+		# 	0: (240, 100),  # Flight 0 departs at interval 16 (4 hours into the day)
+		# 	1: (48, 100),  # Flight 1 departs at interval 48 (12 hours into the day)
+		# 	2: (80, 50)  # Flight 2 departs at interval 80 (20 hours into the day)
+		# }
+		arrival_std_dev = last_checkin / arrival_std
+
+		d = {}
+		count = 0
+		for index, (etd_minutes, total_passengers) in flight_schedule.items():
+			print(index, (etd_minutes, total_passengers))
+
+			mean_checkin_time = etd_minutes - mean_early_t
+
+			arrivals = np.random.normal(loc=mean_checkin_time, scale=arrival_std_dev, size=total_passengers)
+			print(arrivals)
+			valid_arrivals = arrivals[(arrivals >= 0) & (arrivals <= tot_m)]
+			arrivals_binned = np.floor(valid_arrivals / t_interval).astype(int)
+			arrivals_counts, _ = np.histogram(arrivals_binned, bins=np.arange(0, tot_m // t_interval + 1))
+			d[count] = arrivals_counts
+			count += 1
+
+		# Restructure d so that it works with d[i,j] instead of d[i][j]
+		new_d = {}
+		for i, sublist in d.items():
+			for j in range(len(sublist)):
+				new_d[(i, j)] = sublist[j]
+
+		return new_d
+
+# test_flights = {
+# 	0: (600, 100),  # Flight 0 departs at interval 16 (4 hours into the day)
+# 	1: (700, 100),  # Flight 1 departs at interval 48 (12 hours into the day)
+# 	2: (750, 50)  # Flight 2 departs at interval 80 (20 hours into the day)
+# }
+#
+# output = data.flights_to_d(test_flights)
+# print(output)
+#
+# # Define colors for each flight index
+# colors = ['red', 'green', 'blue']
+#
+# plt.figure(figsize=(10, 6))
+#
+# for flight_index in range(max(x for (x, _), _ in output.items()) + 1):
+# 	# Extract and sort time bins and counts
+# 	times, counts = zip(*sorted((time_bin, count) for (idx, time_bin), count in output.items() if idx == flight_index))
+#
+# 	# Scatter plot for data points
+# 	plt.scatter(times, counts, color=colors[flight_index], label=f'Flight {flight_index}', alpha=0.6, edgecolors='w')
+#
+# 	# Interpolate and plot smooth curve if there are enough points
+# 	if len(times) > 1:
+# 		spline = make_interp_spline(times, counts, k=2)
+# 		smooth_times = np.linspace(min(times), max(times), 300)
+# 		plt.plot(smooth_times, spline(smooth_times), color=colors[flight_index])
+#
+# plt.legend()
+# plt.title('Passenger Arrivals by Flight and Time Interval')
+# plt.xlabel('Time Interval')
+# plt.ylabel('Number of Passengers')
+# plt.grid(True)
+# plt.show()
+#
+# # test capcities
+# capacities = [0,0,0]
+# for (flight_index, time_bin), count in output.items():
+# 	capacities[flight_index] += count
+#
+# print(capacities)
+
+
+# plot the x, y, val of this output dictionary

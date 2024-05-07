@@ -36,12 +36,40 @@ class ACP:
         self.add_constraints()
         self.set_objective()
 
-    def create_passenger_flow(self):
-        d = {}
-
+    def create_passenger_flow(self, t_interval=5, tot_m=24 * 60, mean_early_t=2 * 60, arrival_std=2,
+                     last_checkin=45):
         #ToDo: CREATE A FUNCTION THAT CREATES DISTRIBUTION BASED ON A SELF.FLIGHT_SCHEDULE
 
-        return d
+        # flight_schedule = {
+        # 	0: (240, 100),  # Flight 0 departs at interval 16 (4 hours into the day)
+        # 	1: (48, 100),  # Flight 1 departs at interval 48 (12 hours into the day)
+        # 	2: (80, 50)  # Flight 2 departs at interval 80 (20 hours into the day)
+        # }
+        flight_schedule = self.flight_schedule
+        arrival_std_dev = last_checkin / arrival_std
+
+        d = {}
+        count = 0
+        for index, (etd_minutes, total_passengers) in flight_schedule.items():
+            print(index, (etd_minutes, total_passengers))
+
+            mean_checkin_time = etd_minutes - mean_early_t
+
+            arrivals = np.random.normal(loc=mean_checkin_time, scale=arrival_std_dev, size=total_passengers)
+            print(arrivals)
+            valid_arrivals = arrivals[(arrivals >= 0) & (arrivals <= tot_m)]
+            arrivals_binned = np.floor(valid_arrivals / t_interval).astype(int)
+            arrivals_counts, _ = np.histogram(arrivals_binned, bins=np.arange(0, tot_m // t_interval + 1))
+            d[count] = arrivals_counts
+            count += 1
+
+        # Restructure d so that it works with d[i,j] instead of d[i][j]
+        new_d = {}
+        for i, sublist in d.items():
+            for j in range(len(sublist)):
+                new_d[(i, j)] = sublist[j]
+
+        return new_d
 
     def initialize_data(self):
         # Costs and demands
