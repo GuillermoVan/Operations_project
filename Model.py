@@ -138,6 +138,28 @@ class ACP:
 
     def plot_queue(self):
 
+        # ------------------------- TO DO: CHECK IF CODE BELOW IS CORRECT -------------------------
+
+        # for j in range(self.J):
+        #     q_values = [self.q[j, t].x for t in range(self.N)]  # Get the number of passengers of flight j accepted in each period t
+
+        #     # Plot the number of passengers accepted for flight j over time
+        #     plt.plot(range(self.N), q_values, label=f'Flight {j}')
+
+        # # Add vertical lines at t = 4 hours and t = 45 minutes before departure for each flight j
+        # for j in range(self.J):
+        #     plt.axvline(x=self.flight_schedule[j] - 4 * 12, color='red', linestyle='--', label=f'Check-in Limit for Flight {j}')
+        #     plt.axvline(x=self.flight_schedule[j] - 45, color='green', linestyle='--', label=f'Last Check-in Time for Flight {j}')
+
+        # plt.xlabel('Time Interval')
+        # plt.ylabel('Number of Passengers to be Accepted')
+        # plt.title('Number of Passengers to be Accepted over Time for Each Flight')
+        # plt.legend()
+        # plt.grid(True)
+        # plt.show()
+
+        # ----------------------------------------------------------------------------------------
+
         #ToDo: plot amount of passengers in queue as function of time
 
         return
