@@ -160,7 +160,6 @@ class ACP:
         # plt.legend()
         # plt.grid(True)
         # plt.show()
-
         # ----------------------------------------------------------------------------------------
 
         #ToDo: plot amount of passengers in queue as function of time
