@@ -1,6 +1,6 @@
 from gurobipy import Model, GRB
 from data import *
-from Static import *
+from Model import *
 
 class Sensitivity:
     def __init__(self, model_name, T, l, parameter_settings):
