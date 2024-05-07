@@ -14,19 +14,24 @@ class data:
 		self.arrival_std_dev = last_checkin / arrival_std
 		self.data_loc = data_loc
 
-		self.df = None #dataframe for data processing
-		self.flights = None #Flights for the selected airline
+		self.df = None
+		self.flights = None
+
+		self.d = None
+		self.T = None
+		self.too_early = None
+
 
 		self.prep_data()
-		self.d = self.get_d()
-		self.T = self.get_T()
+		self.set_d()
+		self.set_T()
 
 	def prep_data(self):
 		self.organize_rows()
 		self.add_capacity()
 		self.set_time_to_minutes()
 		self.select_airline(self.airline)
-
+		# self.get_pax_dist()
 
 	def organize_rows(self):
 		df = pd.read_excel(self.data_loc)
@@ -82,27 +87,42 @@ class data:
 
 	def set_time_to_minutes(self):
 		self.df['ETD_minutes'] = self.df['ETD'].apply(lambda x: x.hour * 60 + x.minute)
-
-
-	def select_airline(self, airline = 'KLM'):
+	def select_airline(self, airline='KLM'):
 		flights = self.df[self.df['AIRLINE'] == airline]
 		flights = flights.reset_index(drop=True)
 		self.flights = flights
 
-	def get_d(self):
+	def set_d(self):
 		d = {}
+		too_early = []
 		count = 0
+
 		for index, flight in self.flights.iterrows():
+			valid_pax_dist = []
 			etd_minutes = flight['ETD_minutes']
 			total_passengers = flight['MAX_PAX']
-
 			mean_checkin_time = etd_minutes - self.mean_early_t
 
-			arrivals = np.random.normal(loc=mean_checkin_time, scale=self.arrival_std_dev, size=total_passengers)
-			valid_arrivals = arrivals[(arrivals >= 0) & (arrivals <= self.tot_m)]
-			arrivals_binned = np.floor(valid_arrivals / self.t_interval).astype(int)
-			arrivals_counts, _ = np.histogram(arrivals_binned, bins=np.arange(0, self.tot_m // self.t_interval + 1))
-			d[count] = arrivals_counts
+			norm_dist = np.random.normal(loc=mean_checkin_time, scale=self.arrival_std_dev, size=total_passengers)
+			valid_norm_dist = norm_dist[(norm_dist >= 0) & (norm_dist <= self.tot_m)]
+			norm_binned = np.floor(valid_norm_dist / self.t_interval).astype(int)
+			pax_dist, _ = np.histogram(norm_binned, bins=np.arange(0, self.tot_m // self.t_interval + 1))
+
+			earliest_checkin_index = (etd_minutes - self.earliest_checkin)//self.t_interval
+			latest_checkin_index = (etd_minutes - self.last_checkin)//self.t_interval
+
+			print('checkin avialble from index:', earliest_checkin_index, 'to index:', latest_checkin_index)
+			if earliest_checkin_index >= 0 and latest_checkin_index >= 0:
+				too_early.append(sum(pax_dist[:earliest_checkin_index]))
+				pax_dist[:earliest_checkin_index] = 0
+				pax_dist[latest_checkin_index:] = 0
+				valid_pax_dist = pax_dist
+				# valid_pax_dist.append(pax_dist[earliest_checkin_index:latest_checkin_index])
+				# too_early.append(sum(pax_dist[:earliest_checkin_index]))
+
+			d[count] = valid_pax_dist
+			# print(too_early_pax_dist)
+			# too_early[count] = sum(too_early_pax_dist)
 			count += 1
 
 		# Restructure d so that it works with d[i,j] instead of d[i][j]
@@ -111,24 +131,25 @@ class data:
 			for j in range(len(sublist)):
 				new_d[(i, j)] = sublist[j]
 
-		return new_d
+		self.d = new_d
+		self.too_early = too_early
 
-	def get_T(self):
+	def set_T(self):
 		T = {}
 		for index, flight in self.flights.iterrows():
 			etd_minutes = flight['ETD_minutes']
 			no_checkin_t = set()
-			for i in range(self.tot_m//self.t_interval):
+			for i in range(self.tot_m // self.t_interval):
 				t = i * self.t_interval
 				if t < etd_minutes - self.earliest_checkin:
 					no_checkin_t.add(i)
 				elif t > etd_minutes - self.last_checkin:
 					no_checkin_t.add(i)
 			T[index] = no_checkin_t
-		return T
+		self.T = T
 
 	@staticmethod
-	def flights_to_d(flight_schedule, t_interval = 5, tot_m = 24*60, mean_early_t = 2*60, arrival_std = 0.25, last_checkin = 35, earliest_checkin = 4*60):
+	def flights_to_d(flight_schedule, t_interval = 5, tot_m = 24*60, mean_early_t = 2*60, arrival_std = 0.5, last_checkin = 45, earliest_checkin = 4*60):
 		# flight_schedule = {
 		# 	0: (240, 100),  # Flight 0 departs at interval 16 (4 hours into the day)
 		# 	1: (48, 100),  # Flight 1 departs at interval 48 (12 hours into the day)
@@ -136,19 +157,40 @@ class data:
 		# }
 		arrival_std_dev = last_checkin / arrival_std
 
+		#valid_pax_dist = []
 		d = {}
+		too_early = []
 		count = 0
-		for index, (etd_minutes, total_passengers) in flight_schedule.items():
-			print(index, (etd_minutes, total_passengers))
 
+		for index, (etd_minutes, total_passengers) in flight_schedule.items():
+			valid_pax_dist = []
+			# etd_minutes = flight['ETD_minutes']
+			# total_passengers = flight['MAX_PAX']
 			mean_checkin_time = etd_minutes - mean_early_t
 
-			arrivals = np.random.normal(loc=mean_checkin_time, scale=arrival_std_dev, size=total_passengers)
-			print(arrivals)
-			valid_arrivals = arrivals[(arrivals >= 0) & (arrivals <= tot_m)]
-			arrivals_binned = np.floor(valid_arrivals / t_interval).astype(int)
-			arrivals_counts, _ = np.histogram(arrivals_binned, bins=np.arange(0, tot_m // t_interval + 1))
-			d[count] = arrivals_counts
+			norm_dist = np.random.normal(loc=mean_checkin_time, scale=arrival_std_dev, size=total_passengers)
+			valid_norm_dist = norm_dist[(norm_dist >= 0) & (norm_dist <= tot_m)]
+			norm_binned = np.floor(valid_norm_dist / t_interval).astype(int)
+			pax_dist, _ = np.histogram(norm_binned, bins=np.arange(0, tot_m // t_interval + 1))
+
+			earliest_checkin_index = (etd_minutes - earliest_checkin) // t_interval
+			latest_checkin_index = (etd_minutes - last_checkin) // t_interval
+
+			print('checkin avialble from index:', earliest_checkin_index, 'to index:', latest_checkin_index)
+			if earliest_checkin_index >= 0 and latest_checkin_index >= 0:
+				too_early.append(sum(pax_dist[:earliest_checkin_index]))
+				pax_dist[:earliest_checkin_index] = 0
+				pax_dist[latest_checkin_index:] = 0
+				valid_pax_dist = pax_dist
+				# valid_pax_dist = pax_dist[earliest_checkin_index:latest_checkin_index]
+				# too_early.append(sum(pax_dist[:earliest_checkin_index]))
+
+			# print('---->', valid_pax_dist)
+			# print(len(valid_pax_dist), latest_checkin_index - earliest_checkin_index)
+
+			d[count] = valid_pax_dist
+			# print(too_early_pax_dist)
+			# too_early[count] = sum(too_early_pax_dist)
 			count += 1
 
 		# Restructure d so that it works with d[i,j] instead of d[i][j]
@@ -157,48 +199,44 @@ class data:
 			for j in range(len(sublist)):
 				new_d[(i, j)] = sublist[j]
 
-		return new_d
-
-# test_flights = {
-# 	0: (600, 100),  # Flight 0 departs at interval 16 (4 hours into the day)
-# 	1: (700, 100),  # Flight 1 departs at interval 48 (12 hours into the day)
-# 	2: (750, 50)  # Flight 2 departs at interval 80 (20 hours into the day)
-# }
-#
-# output = data.flights_to_d(test_flights)
-# print(output)
-#
-# # Define colors for each flight index
-# colors = ['red', 'green', 'blue']
-#
-# plt.figure(figsize=(10, 6))
-#
-# for flight_index in range(max(x for (x, _), _ in output.items()) + 1):
-# 	# Extract and sort time bins and counts
-# 	times, counts = zip(*sorted((time_bin, count) for (idx, time_bin), count in output.items() if idx == flight_index))
-#
-# 	# Scatter plot for data points
-# 	plt.scatter(times, counts, color=colors[flight_index], label=f'Flight {flight_index}', alpha=0.6, edgecolors='w')
-#
-# 	# Interpolate and plot smooth curve if there are enough points
-# 	if len(times) > 1:
-# 		spline = make_interp_spline(times, counts, k=2)
-# 		smooth_times = np.linspace(min(times), max(times), 300)
-# 		plt.plot(smooth_times, spline(smooth_times), color=colors[flight_index])
-#
-# plt.legend()
-# plt.title('Passenger Arrivals by Flight and Time Interval')
-# plt.xlabel('Time Interval')
-# plt.ylabel('Number of Passengers')
-# plt.grid(True)
-# plt.show()
-#
-# # test capcities
-# capacities = [0,0,0]
-# for (flight_index, time_bin), count in output.items():
-# 	capacities[flight_index] += count
-#
-# print(capacities)
+		return new_d, too_early
 
 
-# plot the x, y, val of this output dictionary
+#data = data()
+#print(sum(data.too_early))
+
+test_flights = {
+	0: (600, 100),  # Flight 0 departs at interval 16 (4 hours into the day)
+	1: (700, 100),  # Flight 1 departs at interval 48 (12 hours into the day)
+	2: (750, 50)  # Flight 2 departs at interval 80 (20 hours into the day)
+}
+
+output, too_early = data.flights_to_d(test_flights)
+print(output)
+print('too_early:', too_early)
+
+colors = ['red', 'green', 'blue']
+
+plt.figure(figsize=(10, 6))
+
+for flight_index in range(max(x for (x, _), _ in output.items()) + 1):
+	# Extract and sort time bins and counts
+	times, counts = zip(*sorted((time_bin, count) for (idx, time_bin), count in output.items() if idx == flight_index))
+
+	# Scatter plot for data points
+	plt.scatter(times, counts, color=colors[flight_index], label=f'Flight {flight_index}', alpha=0.6, edgecolors='w')
+
+	# Interpolate and plot smooth curve if there are enough points
+	if len(times) > 1:
+		spline = make_interp_spline(times, counts, k=2)
+		smooth_times = np.linspace(min(times), max(times), 300)
+		plt.plot(smooth_times, spline(smooth_times), color=colors[flight_index])
+
+plt.legend()
+plt.title('Passenger Arrivals by Flight and Time Interval')
+plt.xlabel('Time Interval')
+plt.ylabel('Number of Passengers')
+plt.grid(True)
+plt.show()
+
+# need to fix indices, add time or something, because now we rearanged. Could keep same indices but set all too early to 0.
