@@ -21,8 +21,8 @@ class ACP:
             late_limit = 0.75 / self.l  # passengers can not check-in after 45 minutes before departure
             Tj = dict()
             for j, t in self.flight_schedule.items():
-                earliest_checkin_index = int(t[0] - early_limit)
-                latest_checkin_index = int(t[0] - late_limit)
+                earliest_checkin_index = int(round(t[0] / (self.l*60)) - early_limit)
+                latest_checkin_index = int(round(t[0] / (self.l*60)) - late_limit)
                 non_checkin_intervals = set(range(earliest_checkin_index)) | set(
                     range(latest_checkin_index + 1, self.N))
                 Tj[j] = non_checkin_intervals
@@ -48,6 +48,7 @@ class ACP:
 
         flight_schedule = self.flight_schedule
         d, too_early = data.flights_to_d(flight_schedule, t_interval, tot_m, mean_early_t, arrival_std, last_checkin, earliest_checkin)
+        print(d)
         return d
 
     def initialize_data(self):
@@ -62,7 +63,7 @@ class ACP:
                 for time in list(value):
                     A[int(key), int(time)] = 1
             self.A = A
-            self.l = self.parameter_settings['l']
+            self.l_param = self.parameter_settings['l']
 
 
 
@@ -92,7 +93,7 @@ class ACP:
 
         if self.model_name == "dynamic_ACP":
             #Dynamic capacity limits
-            self.model.addConstrs((sum(self.q[j, t] * self.p[j] for j in range(self.J)) <= self.l * self.C[t]
+            self.model.addConstrs((sum(self.q[j, t] * self.p[j] for j in range(self.J)) <= self.l_param * self.C[t]
                                    for t in range(self.N)), "CapacityLimit_dynamic")
 
             #All passengers accepted in time frame -> maybe delete, because passengers can arrive too late
@@ -147,9 +148,9 @@ model_name options: "static_ACP", "dynamic_ACP" -> only static works for now
 
 # Example usage:
 flight_schedule = {
- 	0: (240, 100),  # Flight 0 departs at interval 240 with 100 passengers
- 	1: (48, 100),  # Flight 1 departs at interval 48 with 100 passengers
- 	2: (80, 50)  # Flight 2 departs at interval 80 with 50 passengers
+ 	0: (500, 100),  # Flight 0 departs at interval 240 with 100 passengers
+ 	1: (600, 100),  # Flight 1 departs at interval 48 with 100 passengers
+ 	2: (700, 50)  # Flight 2 departs at interval 80 with 50 passengers
  }
 
 parameter_settings = {'p': 1.5/60, 'C': 1.5 * 20, 'I0': 30, 's': 100, 'h0': 5, 'l': 1.5/60}

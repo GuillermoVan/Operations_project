@@ -232,11 +232,13 @@ for flight_index in range(max(x for (x, _), _ in output.items()) + 1):
 		smooth_times = np.linspace(min(times), max(times), 300)
 		plt.plot(smooth_times, spline(smooth_times), color=colors[flight_index])
 
+'''
 plt.legend()
 plt.title('Passenger Arrivals by Flight and Time Interval')
 plt.xlabel('Time Interval')
 plt.ylabel('Number of Passengers')
 plt.grid(True)
 plt.show()
+'''
 
 # need to fix indices, add time or something, because now we rearanged. Could keep same indices but set all too early to 0.
