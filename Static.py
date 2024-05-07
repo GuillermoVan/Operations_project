@@ -34,8 +34,8 @@ class ACP:
         self.add_constraints()
         self.set_objective()
 
-    def create_passenger_flow(self, t_interval=5, tot_m=24 * 60, mean_early_t=2 * 60, arrival_std=0.25,
-                     last_checkin=35):
+    def create_passenger_flow(self, t_interval=5, tot_m=24 * 60, mean_early_t=2 * 60, arrival_std=2,
+                     last_checkin=45):
         #ToDo: CREATE A FUNCTION THAT CREATES DISTRIBUTION BASED ON A SELF.FLIGHT_SCHEDULE
 
         # flight_schedule = {
