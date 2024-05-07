@@ -1,6 +1,7 @@
 from gurobipy import Model, GRB
 from data import *
 import numpy as np
+from data import plot_data
 
 class ACP:
     def __init__(self, model_name, T, l, parameter_settings, flight_schedule=None, data_schiphol=None, schiphol_case=False):
@@ -48,7 +49,7 @@ class ACP:
 
         flight_schedule = self.flight_schedule
         d, too_early = data.flights_to_d(flight_schedule, t_interval, tot_m, mean_early_t, arrival_std, last_checkin, earliest_checkin)
-        print(d)
+        plot_data(d, too_early)
         return d
 
     def initialize_data(self):
