@@ -18,7 +18,7 @@ class Sensitivity:
             parameter_settings_sensitivity = self.apply_sensitivity_factor(factor)
 
             # Initialize and optimize the model
-            acp_optimization = ACP(self.model_name, self.T, self.l, parameter_settings_sensitivity, schiphol_case=True)
+            acp_optimization = ACP(self.model_name, self.T, self.l, parameter_settings_sensitivity, data_schiphol=data(), schiphol_case=True)
             acp_optimization.optimize()
 
     def apply_sensitivity_factor(self, factor):
