@@ -21,8 +21,8 @@ class ACP:
             late_limit = 0.75 / self.l  # passengers can not check-in after 45 minutes before departure
             Tj = dict()
             for j, t in self.flight_schedule.items():
-                earliest_checkin_index = int(t - early_limit)
-                latest_checkin_index = int(t - late_limit)
+                earliest_checkin_index = int(t[0] - early_limit)
+                latest_checkin_index = int(t[0] - late_limit)
                 non_checkin_intervals = set(range(earliest_checkin_index)) | set(
                     range(latest_checkin_index + 1, self.N))
                 Tj[j] = non_checkin_intervals
@@ -51,12 +51,8 @@ class ACP:
         d = {}
         count = 0
         for index, (etd_minutes, total_passengers) in flight_schedule.items():
-            print(index, (etd_minutes, total_passengers))
-
             mean_checkin_time = etd_minutes - mean_early_t
-
             arrivals = np.random.normal(loc=mean_checkin_time, scale=arrival_std_dev, size=total_passengers)
-            print(arrivals)
             valid_arrivals = arrivals[(arrivals >= 0) & (arrivals <= tot_m)]
             arrivals_binned = np.floor(valid_arrivals / t_interval).astype(int)
             arrivals_counts, _ = np.histogram(arrivals_binned, bins=np.arange(0, tot_m // t_interval + 1))
@@ -77,7 +73,7 @@ class ACP:
         if self.model_name == "static_ACP":
             self.C = {t: parameter_settings['C'] for t in range(self.N)}  # Desks available per interval
         else:
-            self.s = {t: parameter_settings['s'] for t in range(self.N)}  # Desk opening costs for time t
+            self.st = {t: parameter_settings['s'] for t in range(self.N)}  # Desk opening costs for time t
             A = np.zeros((self.J, self.N))
             for key,value in self.Tj.items():
                 for time in list(value):
@@ -136,7 +132,7 @@ class ACP:
             self.model.setObjective(sum(self.h[j] * self.I[j, t] + self.s[j] * self.x[j, t]
                                         for j in range(self.J) for t in range(self.N)), GRB.MINIMIZE)
         else:
-            self.model.setObjective(sum(self.h[j] * self.I[j, t] + self.s[t] * self.C[t]
+            self.model.setObjective(sum(self.h[j] * self.I[j, t] + self.st[t] * self.C[t]
                                         for j in range(self.J) for t in range(self.N)), GRB.MINIMIZE)
 
     def optimize(self):
@@ -168,10 +164,10 @@ model_name options: "static_ACP", "dynamic_ACP" -> only static works for now
 
 # Example usage:
 flight_schedule = {
-    0: 16,   # Flight 0 departs at interval 16
-    1: 48,   # Flight 1 departs at interval 48
-    2: 80    # Flight 2 departs at interval 80
-}
+ 	0: (240, 100),  # Flight 0 departs at interval 240 with 100 passengers
+ 	1: (48, 100),  # Flight 1 departs at interval 48 with 100 passengers
+ 	2: (80, 50)  # Flight 2 departs at interval 80 with 50 passengers
+ }
 
 parameter_settings = {'p': 1.5/60, 'C': 1.5 * 20, 'I0': 30, 's': 100, 'h0': 5, 'l': 1.5/60}
 
@@ -179,15 +175,15 @@ if __name__ == "__main__":
     '''
     STATIC APPROACH
     '''
-    #acp_optimization = ACP(model_name="static_ACP", T=24, l=1/12, parameter_settings=parameter_settings, flight_schedule=flight_schedule)
-    acp_optimization_schiphol = ACP(model_name="static_ACP", T=24, l=1/12, parameter_settings=parameter_settings, data_schiphol=data(), schiphol_case=True)
-    #acp_optimization.optimize()
-    acp_optimization_schiphol.optimize()
+    #acp_optimization_static = ACP(model_name="static_ACP", T=24, l=1/12, parameter_settings=parameter_settings, flight_schedule=flight_schedule)
+    #acp_optimization_schiphol_static = ACP(model_name="static_ACP", T=24, l=1/12, parameter_settings=parameter_settings, data_schiphol=data(), schiphol_case=True)
+    #acp_optimization_static.optimize()
+    #acp_optimization_schiphol_static.optimize()
 
     '''
-    STATIC APPROACH
+    DYNAMIC APPROACH
     '''
-    #acp_optimization = ACP(model_name="dynamic_ACP", T=24, l=1/12, parameter_settings=parameter_settings, flight_schedule=flight_schedule)
-    #acp_optimization_schiphol = ACP(model_name="dynamic_ACP", T=24, l=1 / 12, parameter_settings=parameter_settings, data_schiphol=data(), schiphol_case=True)
-    #acp_optimization.optimize()
-    #acp_optimization_schiphol.optimize()
+    acp_optimization_dynamic = ACP(model_name="dynamic_ACP", T=24, l=1/12, parameter_settings=parameter_settings, flight_schedule=flight_schedule)
+    #acp_optimization_schiphol_dynamic = ACP(model_name="dynamic_ACP", T=24, l=1 / 12, parameter_settings=parameter_settings, data_schiphol=data(), schiphol_case=True)
+    acp_optimization_dynamic.optimize()
+    #acp_optimization_schiphol_dynamic.optimize()
