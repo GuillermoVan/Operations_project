@@ -171,7 +171,8 @@ model_name options: "static_ACP", "dynamic_ACP" -> only static works for now
 flight_schedule = {
  	0: (500, 100),  # Flight 0 departs at interval 240 with 100 passengers
  	1: (600, 100),  # Flight 1 departs at interval 48 with 100 passengers
- 	2: (700, 50)  # Flight 2 departs at interval 80 with 50 passengers
+ 	2: (700, 50),  # Flight 2 departs at interval 80 with 50 passengers
+    3: (800, 100) #LAST INDEX OUR OF RANGE !!!
  }
 
 parameter_settings = {'p': 1.5/60, 'C': 1.5 * 20, 'I0': 30, 's': 100, 'h0': 5, 'l': 1.5/60}

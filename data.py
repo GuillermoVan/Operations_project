@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import make_interp_spline
-
+import itertools
 class data:
 	def __init__(self, airline = 'KLM', t_interval = 5, tot_m = 24*60, mean_early_t = 120, arrival_std = 2, last_checkin = 45, earliest_checkin = 4*60, data_loc = 'data 30_04_2024.xlsx'):
 		self.airline = airline
@@ -224,7 +224,7 @@ def plot_data(d, too_early):
 	#     2: (500, 50)    # Flight 2 departs at interval 80 (20 hours into the day)
 	# }
 	# d, too_early = data.flights_to_d(test_flights)
-	colors = ['red', 'green', 'blue']
+	colors = itertools.cycle(['red', 'green', 'blue'])
 
 	plt.figure(figsize=(10, 6))
 
@@ -238,13 +238,14 @@ def plot_data(d, too_early):
 		times, counts = zip(*sorted(data_points))
 
 		# Scatter plot for data points
-		plt.scatter(times, counts, color=colors[flight_index], label=f'Flight {flight_index}', alpha=0.6, edgecolors='w')
+		color = next(colors)
+		plt.scatter(times, counts, color=color, label=f'Flight {flight_index}', alpha=0.6, edgecolors='w')
 
 		# Interpolate and plot smooth curve if there are enough points
-		if len(times) > 1:
-			spline = make_interp_spline(times, counts, k=2)
-			smooth_times = np.linspace(min(times), max(times), 300)
-			plt.plot(smooth_times, spline(smooth_times), color=colors[flight_index])
+		#if len(times) > 1:
+		#	spline = make_interp_spline(times, counts, k=2)
+		#	smooth_times = np.linspace(min(times), max(times), 300)
+		#	plt.plot(smooth_times, spline(smooth_times), color=colors[flight_index])
 
 	plt.legend()
 	plt.title('Passenger Arrivals by Flight and Time Interval')
