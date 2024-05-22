@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import make_interp_spline
-
+import itertools
 class data:
 	def __init__(self, airline = 'KLM', t_interval = 5, tot_m = 24*60, mean_early_t = 120, arrival_std = 2, last_checkin = 45, earliest_checkin = 4*60, data_loc = 'data 30_04_2024.xlsx'):
 		self.airline = airline
@@ -216,40 +216,45 @@ test_flights = {
     2: (500, 50)    # Flight 2 departs at interval 80 (20 hours into the day)
 }
 
-output, too_early = data.flights_to_d(test_flights)
-colors = ['red', 'green', 'blue']
 
-plt.figure(figsize=(10, 6))
+def plot_data(d, too_early):
+	# test_flights = {
+	#     0: (90, 100),  # Flight 0 departs at interval 16 (4 hours into the day)
+	#     1: (400, 100),  # Flight 1 departs at interval 48 (12 hours into the day)
+	#     2: (500, 50)    # Flight 2 departs at interval 80 (20 hours into the day)
+	# }
+	# d, too_early = data.flights_to_d(test_flights)
+	colors = itertools.cycle(['red', 'green', 'blue'])
 
-for flight_index in range(max(x for (x, _), _ in output.items()) + 1):
-    # Check if there are any data points for the current flight_index
-    data_points = [(time_bin, count) for (idx, time_bin), count in output.items() if idx == flight_index]
-    if not data_points:
-        continue  # Skip this iteration if no data points
+	plt.figure(figsize=(10, 6))
 
-    # Extract and sort time bins and counts
-    times, counts = zip(*sorted(data_points))
+	for flight_index in range(max(x for (x, _), _ in d.items()) + 1):
+		# Check if there are any data points for the current flight_index
+		data_points = [(time_bin, count) for (idx, time_bin), count in d.items() if idx == flight_index]
+		if not data_points:
+			continue  # Skip this iteration if no data points
 
-    # Scatter plot for data points
-    plt.scatter(times, counts, color=colors[flight_index], label=f'Flight {flight_index}', alpha=0.6, edgecolors='w')
+		# Extract and sort time bins and counts
+		times, counts = zip(*sorted(data_points))
 
-    # Interpolate and plot smooth curve if there are enough points
-    if len(times) > 1:
-        spline = make_interp_spline(times, counts, k=2)
-        smooth_times = np.linspace(min(times), max(times), 300)
-        plt.plot(smooth_times, spline(smooth_times), color=colors[flight_index])
+		# Scatter plot for data points
+		color = next(colors)
+		plt.scatter(times, counts, color=color, label=f'Flight {flight_index}', alpha=0.6, edgecolors='w')
 
+		# Interpolate and plot smooth curve if there are enough points
+		#if len(times) > 1:
+		#	spline = make_interp_spline(times, counts, k=2)
+		#	smooth_times = np.linspace(min(times), max(times), 300)
+		#	plt.plot(smooth_times, spline(smooth_times), color=colors[flight_index])
 
+	plt.legend()
+	plt.title('Passenger Arrivals by Flight and Time Interval')
+	plt.xlabel('Time Interval')
+	plt.ylabel('Number of Passengers')
+	plt.grid(True)
+	plt.show()
 
-plt.legend()
-plt.title('Passenger Arrivals by Flight and Time Interval')
-plt.xlabel('Time Interval')
-plt.ylabel('Number of Passengers')
-plt.grid(True)
-plt.show()
+	print('too early', too_early)
 
-
-print('too early', too_early)
-'''
 
 # need to fix indices, add time or something, because now we rearanged. Could keep same indices but set all too early to 0.
