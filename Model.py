@@ -64,11 +64,12 @@ class ACP:
             for key,value in self.Tj.items():
                 for time in list(value):
                     A[int(key), int(time)] = 1
+            print("A is here: ", A)
             self.A = A
             self.l_param = self.parameter_settings['l']
 
         self.s = {j: parameter_settings['s'] for j in range(self.J)}  # Desk opening costs for flight j
-        self.h = {j: parameter_settings['h0'] + j for j in range(self.J)}  # Queue costs
+        self.h = {j: parameter_settings['h0'] for j in range(self.J)}  # Queue costs
 
     def setup_decision_variables(self):
         # Decision variables
@@ -80,14 +81,14 @@ class ACP:
 
     def add_constraints(self):
         # Initial conditions
-        #self.model.addConstrs((self.I[j, 0] == self.I0[j] for j in range(self.J)), "InitialQueue")
+        self.model.addConstrs((self.I[j, self.flight_schedule[j][0]/(self.l*60) - 4 * 12] >= self.I0[j] for j in range(self.J)), "InitialQueue")
 
         # Queue dynamics
         self.model.addConstrs((self.I[j, t] == (self.I[j, t - 1] + self.d[j, t] - self.q[j, t])
-                               for j in range(self.J) for t in range(1, self.N)), "QueueDynamics")
+                               for j in range(self.J) for t in range(int(self.flight_schedule[j][0]/(self.l*60) - 4 * 12 + 1), self.N)), "QueueDynamics")
 
         # No passengers can ENTER queue when they are outside the check-in limits -> should actually be changed to I
-        self.model.addConstrs((self.I[j, t] == 0
+        self.model.addConstrs((self.q[j, t] == 0
                                for j in range(self.J) for t in self.Tj[j]), "CheckIn-Times")
 
         if self.model_name == "dynamic_ACP":
@@ -96,8 +97,9 @@ class ACP:
                                    for t in range(self.N)), "CapacityLimit_dynamic")
 
             #All passengers accepted in time frame -> maybe delete, because passengers can arrive too late
-            self.model.addConstrs((self.A[j, t] * self.q[j, t] == 0
+            self.model.addConstrs((self.A[j,t] * self.I[j, t] == 0
                                    for j in range(self.J) for t in range(self.N)), "All_pax_in_timeframe")
+
         else:
             # Capacity limits
             self.model.addConstrs((sum(self.q[j, t] * self.p[j] for j in range(self.J)) <= self.C[t]
@@ -105,6 +107,8 @@ class ACP:
             # Check-in limits
             self.model.addConstrs((self.q[j, t] * self.p[j] <= self.C[t]
                                    for j in range(self.J) for t in range(self.N)), "CheckInLimit")
+
+
 
 
 
@@ -127,10 +131,16 @@ class ACP:
             for v in self.model.getVars():
                 print(f"{v.VarName} = {v.x}")
             print("Optimal solution found!")
+            print(f"Objective Value = {self.model.ObjVal}")
         elif self.model.status == GRB.INF_OR_UNBD:
             print("Model is infeasible or unbounded")
         elif self.model.status == GRB.INFEASIBLE:
             print("Model is infeasible")
+            self.model.computeIIS()
+            print("\nThe following constraints are causing the infeasibility:\n")
+            for c in self.model.getConstrs():
+                if c.IISConstr:
+                    print(f"{c.ConstrName}: {c}")
         elif self.model.status == GRB.UNBOUNDED:
             print("Model is unbounded")
         else:
@@ -186,16 +196,17 @@ flight_schedule = {
  	2: (1200, 50)  # Flight 2 departs at interval X with Y passengers
  }
 
-parameter_settings = {'p': 5/60, 'C': 1, 's': 100, 'h0': 100, 'l': 5/60}
+parameter_settings = {'p': 1, 'C': 1, 's': 100000, 'h0': 1, 'l': 1}
 
 if __name__ == "__main__":
     '''
     STATIC APPROACH
     '''
-    # acp_optimization_static = ACP(model_name="static_ACP", T=24, l=1/12, parameter_settings=parameter_settings, flight_schedule=flight_schedule)
-    # acp_optimization_schiphol_static = ACP(model_name="static_ACP", T=24, l=1/12, parameter_settings=parameter_settings, data_schiphol=data(), schiphol_case=True)
-    # acp_optimization_static.optimize()
-    # acp_optimization_schiphol_static.optimize()
+    #acp_optimization_static = ACP(model_name="static_ACP", T=24, l=1/12, parameter_settings=parameter_settings, flight_schedule=flight_schedule)
+    #acp_optimization_schiphol_static = ACP(model_name="static_ACP", T=24, l=1/12, parameter_settings=parameter_settings, data_schiphol=data(), schiphol_case=True)
+    #acp_optimization_static.optimize()
+    #acp_optimization_schiphol_static.optimize()
+    #acp_optimization_static.plot_queue()
 
     '''
     DYNAMIC APPROACH
