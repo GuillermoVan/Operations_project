@@ -85,10 +85,10 @@ class ACP:
 
         # Queue dynamics
         self.model.addConstrs((self.I[j, t] == (self.I[j, t - 1] + self.d[j, t] - self.q[j, t])
-                               for j in range(self.J) for t in range(int(self.flight_schedule[j][0]/(self.l*60) - 4 * 12 + 1), self.N)), "QueueDynamics")
+                               for j in range(self.J) for t in range(int(self.flight_schedule[j][0]/(self.l*60) - (4 * 12) + 1), self.N)), "QueueDynamics")
 
         # No passengers can ENTER queue when they are outside the check-in limits -> should actually be changed to I
-        self.model.addConstrs((self.q[j, t] == 0
+        self.model.addConstrs((self.I[j, t] == 0
                                for j in range(self.J) for t in self.Tj[j]), "CheckIn-Times")
 
         if self.model_name == "dynamic_ACP":
@@ -196,7 +196,7 @@ flight_schedule = {
  	2: (1200, 50)  # Flight 2 departs at interval X with Y passengers
  }
 
-parameter_settings = {'p': 1, 'C': 1, 's': 100000, 'h0': 1, 'l': 1}
+parameter_settings = {'p': 1, 'C': 1, 's': 100, 'h0': 1, 'l': 1}
 
 if __name__ == "__main__":
     '''
