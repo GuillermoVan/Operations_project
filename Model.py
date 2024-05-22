@@ -15,7 +15,9 @@ class ACP:
         if self.schiphol_case is False:
             self.flight_schedule = flight_schedule  # Dictionary of flight index as key and interval index as departure time in timewindow T
             self.J = len(flight_schedule)  # Total number of flights in T
-            self.d = self.create_passenger_flow()
+            self.d, too_early = self.create_passenger_flow()
+            self.I0 = {j: too_early[j] for j in
+                       range(self.J)}  # Number of passengers waiting before desk opening per flight
             #Tj calculation
             early_limit = 4 / self.l  # passengers can not check-in before 4 hours in advance of departure
             late_limit = 0.75 / self.l  # passengers can not check-in after 45 minutes before departure
@@ -36,7 +38,7 @@ class ACP:
         self.add_constraints()
         self.set_objective()
 
-    def create_passenger_flow(self, t_interval=5, tot_m=24 * 60, mean_early_t=2 * 60, arrival_std=2,
+    def create_passenger_flow(self, t_interval=5, tot_m=24 * 60, mean_early_t=2 * 60, arrival_std=0.5,
                  last_checkin=45, earliest_checkin=4 * 60):
         #ToDo: CREATE A FUNCTION THAT CREATES DISTRIBUTION BASED ON A SELF.FLIGHT_SCHEDULE
 
@@ -49,7 +51,7 @@ class ACP:
         flight_schedule = self.flight_schedule
         d, too_early = data.flights_to_d(flight_schedule, t_interval, tot_m, mean_early_t, arrival_std, last_checkin, earliest_checkin)
         print(d)
-        return d
+        return d, too_early
 
     def initialize_data(self):
         # Costs and demands
@@ -65,9 +67,6 @@ class ACP:
             self.A = A
             self.l_param = self.parameter_settings['l']
 
-
-
-        self.I0 = {j: parameter_settings['I0'] for j in range(self.J)}  # Number of passengers waiting before desk opening per flight
         self.s = {j: parameter_settings['s'] for j in range(self.J)}  # Desk opening costs for flight j
         self.h = {j: parameter_settings['h0'] + j for j in range(self.J)}  # Queue costs
 
