@@ -11,7 +11,7 @@ class Sensitivity:
 
     def sensitivity_analysis(self):
         # Define the range for sensitivity analysis
-        sensitivity_range = [0.8, 1.0, 1.2]  # You can adjust this range as needed
+        sensitivity_range = [0.8, 1.0, 1.2]  # Adjust
 
         for factor in sensitivity_range:
             # Apply sensitivity factor to parameter_settings
@@ -22,7 +22,7 @@ class Sensitivity:
             acp_optimization.optimize()
 
     def apply_sensitivity_factor(self, factor):
-        # Apply sensitivity factor to parameter_settings
+        # Apply sensitivity factor to parameter_settings   >  Which parameters change?
         parameter_settings_sensitivity = {
             'p': self.parameter_settings['p'] * factor,
             'C': self.parameter_settings['C'],
@@ -32,7 +32,7 @@ class Sensitivity:
         }
         return parameter_settings_sensitivity
 
-# Example usage:
+# Example usage (change to current param settings):
 parameter_settings = {'p': 1.5/60, 'C': 15, 'I0': 30, 's0': 100, 'h0': 5}
 
 if __name__ == "__main__":
