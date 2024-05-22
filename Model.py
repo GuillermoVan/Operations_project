@@ -1,6 +1,7 @@
 from gurobipy import Model, GRB
 from data import *
 import numpy as np
+from data import plot_data
 
 class ACP:
     def __init__(self, model_name, T, l, parameter_settings, flight_schedule=None, data_schiphol=None, schiphol_case=False):
@@ -46,9 +47,8 @@ class ACP:
         # 	2: (80, 50)  # Flight 2 departs at interval 80 (20 hours into the day)
         # }
 
-        flight_schedule = self.flight_schedule
-        d, too_early = data.flights_to_d(flight_schedule, t_interval, tot_m, mean_early_t, arrival_std, last_checkin, earliest_checkin)
-        print(d)
+        d, too_early = data.flights_to_d(self.flight_schedule, t_interval, tot_m, mean_early_t, arrival_std, last_checkin, earliest_checkin)
+        plot_data(d, too_early)
         return d
 
     def initialize_data(self):
@@ -173,7 +173,8 @@ model_name options: "static_ACP", "dynamic_ACP" -> only static works for now
 flight_schedule = {
  	0: (500, 100),  # Flight 0 departs at interval 240 with 100 passengers
  	1: (600, 100),  # Flight 1 departs at interval 48 with 100 passengers
- 	2: (700, 50)  # Flight 2 departs at interval 80 with 50 passengers
+ 	2: (700, 50),  # Flight 2 departs at interval 80 with 50 passengers
+    3: (800, 100) #LAST INDEX OUR OF RANGE !!!
  }
 
 parameter_settings = {'p': 1.5/60, 'C': 1.5 * 20, 'I0': 30, 's': 100, 'h0': 5, 'l': 1.5/60}
