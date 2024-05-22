@@ -141,23 +141,23 @@ class ACP:
 
         # ------------------------- TO DO: CHECK IF CODE BELOW IS CORRECT -------------------------
 
-        # for j in range(self.J):
-        #     q_values = [self.q[j, t].x for t in range(self.N)]  # Get the number of passengers of flight j accepted in each period t
+        for j in range(self.J):
+            q_values = [self.q[j, t].x for t in range(self.N)]  # Get the number of passengers of flight j accepted in each period t
 
-        #     # Plot the number of passengers accepted for flight j over time
-        #     plt.plot(range(self.N), q_values, label=f'Flight {j}')
+             # Plot the number of passengers accepted for flight j over time
+            plt.plot(range(self.N), q_values, label=f'Flight {j}')
 
-        # # Add vertical lines at t = 4 hours and t = 45 minutes before departure for each flight j
-        # for j in range(self.J):
-        #     plt.axvline(x=self.flight_schedule[j] - 4 * 12, color='red', linestyle='--', label=f'Check-in Limit for Flight {j}')
-        #     plt.axvline(x=self.flight_schedule[j] - 45, color='green', linestyle='--', label=f'Last Check-in Time for Flight {j}')
+        # Add vertical lines at t = 4 hours and t = 45 minutes before departure for each flight j
+        for j in range(self.J):
+            plt.axvline(x=self.flight_schedule[j][0]/(self.l*60) - 4 * 12, color='red', linestyle='--', label=f'First Check-in Limit for Flight {j}')
+            plt.axvline(x=self.flight_schedule[j][0]/(self.l*60) - 0.75 / self.l, color='green', linestyle='--', label=f'Last Check-in Time for Flight {j}')
 
-        # plt.xlabel('Time Interval')
-        # plt.ylabel('Number of Passengers to be Accepted')
-        # plt.title('Number of Passengers to be Accepted over Time for Each Flight')
-        # plt.legend()
-        # plt.grid(True)
-        # plt.show()
+        plt.xlabel('Time Interval')
+        plt.ylabel('Number of Passengers to be Accepted')
+        plt.title('Number of Passengers to be Accepted over Time for Each Flight')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
         # ----------------------------------------------------------------------------------------
 
         #ToDo: plot amount of passengers in queue as function of time
@@ -169,9 +169,9 @@ model_name options: "static_ACP", "dynamic_ACP" -> only static works for now
 
 # Example usage:
 flight_schedule = {
- 	0: (500, 100),  # Flight 0 departs at interval 240 with 100 passengers
- 	1: (600, 100),  # Flight 1 departs at interval 48 with 100 passengers
- 	2: (700, 50)  # Flight 2 departs at interval 80 with 50 passengers
+ 	0: (300, 100),  # Flight 0 departs at interval X with Y passengers
+ 	1: (800, 100),  # Flight 1 departs at interval X with Y passengers
+ 	2: (1200, 50)  # Flight 2 departs at interval X with Y passengers
  }
 
 parameter_settings = {'p': 1.5/60, 'C': 1.5 * 20, 'I0': 30, 's': 100, 'h0': 5, 'l': 1.5/60}
@@ -191,4 +191,5 @@ if __name__ == "__main__":
     acp_optimization_dynamic = ACP(model_name="dynamic_ACP", T=24, l=1/12, parameter_settings=parameter_settings, flight_schedule=flight_schedule)
     #acp_optimization_schiphol_dynamic = ACP(model_name="dynamic_ACP", T=24, l=1 / 12, parameter_settings=parameter_settings, data_schiphol=data(), schiphol_case=True)
     acp_optimization_dynamic.optimize()
+    acp_optimization_dynamic.plot_queue()
     #acp_optimization_schiphol_dynamic.optimize()
