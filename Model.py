@@ -80,14 +80,14 @@ class ACP:
 
     def add_constraints(self):
         # Initial conditions
-        self.model.addConstrs((self.I[j, 0] == self.I0[j] for j in range(self.J)), "InitialQueue")
+        #self.model.addConstrs((self.I[j, 0] == self.I0[j] for j in range(self.J)), "InitialQueue")
 
         # Queue dynamics
         self.model.addConstrs((self.I[j, t] == (self.I[j, t - 1] + self.d[j, t] - self.q[j, t])
                                for j in range(self.J) for t in range(1, self.N)), "QueueDynamics")
 
-        #No passengers can ENTER queue when they are outside the check-in limits -> should actually be changed to I
-        self.model.addConstrs((self.q[j, t] == 0
+        # No passengers can ENTER queue when they are outside the check-in limits -> should actually be changed to I
+        self.model.addConstrs((self.I[j, t] == 0
                                for j in range(self.J) for t in self.Tj[j]), "CheckIn-Times")
 
         if self.model_name == "dynamic_ACP":
@@ -145,7 +145,7 @@ class ACP:
 
             # Add vertical lines at t = 4 hours and t = 45 minutes before departure for each flight j
             plt.axvline(x=self.flight_schedule[j][0]/(self.l*60) - 4 * 12, color='black', linestyle='--', label=f'First Check-in Limit for Flight {j}')
-            plt.axvline(x=self.flight_schedule[j][0]/(self.l*60) - 0.75 / self.l, color='black', linestyle='--', label=f'Last Check-in Time for Flight {j}')
+            plt.axvline(x=self.flight_schedule[j][0]/(self.l*60) - 0.75 * 12, color='black', linestyle='--', label=f'Last Check-in Time for Flight {j}')
 
         plt.xlabel('Time Interval')
         plt.ylabel('Number of Passengers to be Accepted')
@@ -163,7 +163,7 @@ class ACP:
 
             # Add vertical lines at t = 4 hours and t = 45 minutes before departure for each flight j
             plt.axvline(x=self.flight_schedule[j][0]/(self.l*60) - 4 * 12, color='black', linestyle='--', label=f'First Check-in Limit for Flight {j}')
-            plt.axvline(x=self.flight_schedule[j][0]/(self.l*60) - 0.75 / self.l, color='black', linestyle='--', label=f'Last Check-in Time for Flight {j}')
+            plt.axvline(x=self.flight_schedule[j][0]/(self.l*60) - 0.75 * 12, color='black', linestyle='--', label=f'Last Check-in Time for Flight {j}')
 
         plt.xlabel('Time Interval')
         plt.ylabel('Number of Passengers in Queue')
@@ -186,7 +186,7 @@ flight_schedule = {
  	2: (1200, 50)  # Flight 2 departs at interval X with Y passengers
  }
 
-parameter_settings = {'p': 1.5/60, 'C': 1.5 * 20, 'I0': 30, 's': 100, 'h0': 5, 'l': 1.5/60}
+parameter_settings = {'p': 5/60, 'C': 1, 's': 100, 'h0': 100, 'l': 5/60}
 
 if __name__ == "__main__":
     '''
