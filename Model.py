@@ -139,16 +139,12 @@ class ACP:
 
     def plot_queue(self):
 
-        # ------------------------- TO DO: CHECK IF CODE BELOW IS CORRECT -------------------------
-
-
         for j in range(self.J):
             q_values = [self.q[j, t].x for t in range(self.N)]  # Get the number of passengers of flight j accepted in each period t
-             # Plot the number of passengers accepted for flight j over time
+            # Plot the number of passengers accepted for flight j over time
             plt.plot(range(self.N), q_values, label=f'Flight {j}')
 
-        # Add vertical lines at t = 4 hours and t = 45 minutes before departure for each flight j
-        for j in range(self.J):
+            # Add vertical lines at t = 4 hours and t = 45 minutes before departure for each flight j
             plt.axvline(x=self.flight_schedule[j][0]/(self.l*60) - 4 * 12, color='black', linestyle='--', label=f'First Check-in Limit for Flight {j}')
             plt.axvline(x=self.flight_schedule[j][0]/(self.l*60) - 0.75 / self.l, color='black', linestyle='--', label=f'Last Check-in Time for Flight {j}')
 
@@ -160,9 +156,26 @@ class ACP:
         plt.show()
         # ----------------------------------------------------------------------------------------
 
-        #ToDo: plot amount of passengers in queue as function of time
+
+        for j in range(self.J):
+            I_values = [self.I[j, t].x for t in range(self.N)]  # Get the number of passengers in queue for flight j in each period t
+            # Plot the number of passengers in queue for flight j over time
+            plt.plot(range(self.N), I_values, label=f'Number of passengers in queue for Flight {j}')
+
+            # Add vertical lines at t = 4 hours and t = 45 minutes before departure for each flight j
+            plt.axvline(x=self.flight_schedule[j][0]/(self.l*60) - 4 * 12, color='black', linestyle='--', label=f'First Check-in Limit for Flight {j}')
+            plt.axvline(x=self.flight_schedule[j][0]/(self.l*60) - 0.75 / self.l, color='black', linestyle='--', label=f'Last Check-in Time for Flight {j}')
+
+        plt.xlabel('Time Interval')
+        plt.ylabel('Number of Passengers in Queue')
+        plt.title('Number of Passengers in Queue over Time for Each Flight')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+        
 
         return
+
 '''
 model_name options: "static_ACP", "dynamic_ACP" -> only static works for now
 '''
@@ -180,10 +193,10 @@ if __name__ == "__main__":
     '''
     STATIC APPROACH
     '''
-    #acp_optimization_static = ACP(model_name="static_ACP", T=24, l=1/12, parameter_settings=parameter_settings, flight_schedule=flight_schedule)
-    #acp_optimization_schiphol_static = ACP(model_name="static_ACP", T=24, l=1/12, parameter_settings=parameter_settings, data_schiphol=data(), schiphol_case=True)
-    #acp_optimization_static.optimize()
-    #acp_optimization_schiphol_static.optimize()
+    # acp_optimization_static = ACP(model_name="static_ACP", T=24, l=1/12, parameter_settings=parameter_settings, flight_schedule=flight_schedule)
+    # acp_optimization_schiphol_static = ACP(model_name="static_ACP", T=24, l=1/12, parameter_settings=parameter_settings, data_schiphol=data(), schiphol_case=True)
+    # acp_optimization_static.optimize()
+    # acp_optimization_schiphol_static.optimize()
 
     '''
     DYNAMIC APPROACH
