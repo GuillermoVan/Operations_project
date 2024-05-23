@@ -114,7 +114,7 @@ class data:
 			earliest_checkin_index = max(0, (etd_minutes - self.earliest_checkin) // self.t_interval)
 			latest_checkin_index = min((etd_minutes - self.last_checkin) // self.t_interval, len(pax_dist) - 1)
 
-			print('checkin avialble from index:', earliest_checkin_index, 'to index:', latest_checkin_index)
+			#print('checkin avialble from index:', earliest_checkin_index, 'to index:', latest_checkin_index)
 			if earliest_checkin_index >= 0 and latest_checkin_index >= 0:
 				too_early.append(sum(pax_dist[:earliest_checkin_index]))
 				pax_dist[:earliest_checkin_index] = 0
@@ -179,7 +179,7 @@ class data:
 			earliest_checkin_index = max(0, (etd_minutes - earliest_checkin) // t_interval)
 			latest_checkin_index = min((etd_minutes - last_checkin) // t_interval, len(pax_dist) - 1)
 
-			print('checkin avialble from index:', earliest_checkin_index, 'to index:', latest_checkin_index)
+			#print('checkin avialble from index:', earliest_checkin_index, 'to index:', latest_checkin_index)
 			if earliest_checkin_index >= 0 and latest_checkin_index >= 0:
 				too_early.append(sum(pax_dist[:earliest_checkin_index]))
 				pax_dist[:earliest_checkin_index] = 0
