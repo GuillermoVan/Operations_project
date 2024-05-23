@@ -21,6 +21,10 @@ class Sensitivity:
             acp_optimization = ACP(self.model_name, self.T, self.l, parameter_settings_sensitivity, flight_schedule=flight_schedule, data_schiphol=None, schiphol_case=False) #schiphol/own data
             acp_optimization.optimize()
 
+            # TODO: plot such that q/I are plotted for the various factors
+            # acp_optimization.plot_queue()
+             
+
     def apply_sensitivity_factor(self, factor):
         # Apply sensitivity factor to parameter_settings   >  Which parameters change?
         parameter_settings_sensitivity = {
