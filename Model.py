@@ -180,13 +180,13 @@ model_name options: "static_ACP", "dynamic_ACP" -> only static works for now
 
 # Example usage:
 flight_schedule = {
- 	0: (300, 100),  # Flight 0 departs at interval X with Y passengers
- 	1: (800, 100),  # Flight 1 departs at interval X with Y passengers
- 	2: (1200, 50),  # Flight 2 departs at interval X with Y passengers
-    3: (330, 50),  # Flight 3 departs at interval X with Y passengers
+ 	0: (300, 300),  # Flight 0 departs at interval X with Y passengers
+ 	1: (800, 300),  # Flight 1 departs at interval X with Y passengers
+ 	2: (1200, 200),  # Flight 2 departs at interval X with Y passengers
+    3: (330, 100),  # Flight 3 departs at interval X with Y passengers
  }
 
-parameter_settings = {'p': 1, 'C': 10, 's': 100, 'h0': 1, 'l': 1} #'h0' decides the costs of a waiting line, 's' decides the costs of opening a desk
+parameter_settings = {'p': 1, 'C': 10, 's': 10000, 'h0': 0, 'l': 1} #'h0' decides the costs of a waiting line, 's' decides the costs of opening a desk
 
 if __name__ == "__main__":
     '''
