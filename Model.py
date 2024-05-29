@@ -192,6 +192,11 @@ class ACP:
 
         return
 
+    def get_result_data(self):
+        q = [sum(self.q[j, t].X for j in range(self.J)) for t in range(self.N)]
+        I = [sum(self.I[j, t].X for j in range(self.J)) for t in range(self.N)]
+        return q, I
+
 '''
 model_name options: "static_ACP", "dynamic_ACP" -> only static works for now
 '''
@@ -236,3 +241,5 @@ if __name__ == "__main__":
     acp_optimization_schiphol_dynamic.plot_queue()
 
     q, I = acp_optimization_schiphol_dynamic.get_result_data()
+    print(q)
+    print(I)
