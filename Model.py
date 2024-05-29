@@ -4,6 +4,7 @@ import numpy as np
 
 class ACP:
     def __init__(self, model_name, T, l, parameter_settings, flight_schedule=None, data_schiphol=None, schiphol_case=False):
+        self.objective = None
         self.model_name = model_name
         self.model = Model(model_name)
         self.T = T  # Total time window [hrs]
@@ -55,7 +56,7 @@ class ACP:
             for time in list(value):
                 A[int(key), int(time)] = 1
         self.A = A
-        self.l_param = self.parameter_settings['l']
+        self.l_param = self.parameter_settings['l'] # average service time per desk
 
         self.s = {j: parameter_settings['s'] for j in range(self.J)}  # Desk opening costs for flight j
         self.h = {j: parameter_settings['h0'] for j in range(self.J)}  # Queue costs
@@ -77,7 +78,7 @@ class ACP:
 
         # No passengers can ENTER queue when they are outside the check-in limits
         self.model.addConstrs((self.I[j, t] == 0
-                               for j in range(self.J) for t in self.Tj[j]), "CheckIn-Times")
+                               for j in range(self.J) for t in self.Tj[j]), "EnterQueueLimit")
 
         # Capacity limits -> first in static
         self.model.addConstrs((sum(self.q[j, t] * self.p[j] for j in range(self.J)) <= self.C[t]
@@ -118,6 +119,8 @@ class ACP:
             #    print(f"{v.VarName} = {v.x}")
             print("Optimal solution found!")
             print(f"Objective Value = {self.model.ObjVal}")
+            self.objective = selff.model.ObjVal
+
         elif self.model.status == GRB.INF_OR_UNBD:
             print("Model is infeasible or unbounded")
         elif self.model.status == GRB.INFEASIBLE:
@@ -134,8 +137,6 @@ class ACP:
 
     def plot_queue(self):
 
-        print("HERE: ", self.I[0, 20 - 1].x, '+', self.d[0, 20], '-', self.q[0, 20].x)
-
         for j in range(self.J):
             q_values = [self.q[j, t].x for t in range(self.N)]  # Get the number of passengers of flight j accepted in each period t
             # Plot the number of passengers accepted for flight j over time
@@ -146,8 +147,8 @@ class ACP:
             #plt.axvline(x=self.flight_schedule[j][0]/(self.l*60) - 0.75 * 12, color='black', linestyle='--', label=f'Last Check-in Time for Flight {j}')
 
         plt.xlabel('Time Interval')
-        plt.ylabel('Number of Passengers to be Accepted')
-        plt.title('Number of Passengers to be Accepted over Time for Each Flight')
+        plt.ylabel('Number of Passengers Accepted at Desk')
+        plt.title('Number of Passengers Accepted at Desk over Time for Each Flight')
         plt.legend()
         plt.grid(True)
         plt.show()
@@ -158,7 +159,7 @@ class ACP:
             # Plot the number of passengers in queue for flight j over time
             plt.plot(range(self.N), I_values, label=f'Number of passengers in queue for Flight {j}')
 
-            # FOR VALIDATION: Add vertical lines at t = 4 hours and t = 45 minutes before departure for each flight j
+            # FOR VERIFICATION: Add vertical lines at t = 4 hours and t = 45 minutes before departure for each flight j
             #plt.axvline(x=self.flight_schedule[j][0]/(self.l*60) - 4 * 12, color='black', linestyle='--', label=f'First Check-in Limit for Flight {j}')
             #plt.axvline(x=self.flight_schedule[j][0]/(self.l*60) - 0.75 * 12, color='black', linestyle='--', label=f'Last Check-in Time for Flight {j}')
 
@@ -168,9 +169,34 @@ class ACP:
         plt.legend()
         plt.grid(True)
         plt.show()
-        
+
+        I_values = [sum(self.I[j, t].X for j in range(self.J)) for t in range(self.N)]
+        plt.plot(range(self.N), I_values)
+
+        plt.xlabel('Time Interval')
+        plt.ylabel('Number of Passengers in Queue')
+        plt.title('Number of Passengers in Queue over Time for all Flights Combined')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+
+        q_values = [sum(self.q[j, t].X for j in range(self.J)) for t in range(self.N)]
+        plt.plot(range(self.N), q_values)
+
+        plt.xlabel('Time Interval')
+        plt.ylabel('Number of Passengers Accepted')
+        plt.title('Number of Passengers Accepted at Desk over Time for all Flights Combined')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
 
         return
+
+    def get_result_data(self):
+        q = [sum(self.q[j, t].X for j in range(self.J)) for t in range(self.N)]
+        I = [sum(self.I[j, t].X for j in range(self.J)) for t in range(self.N)]
+
+        return q, I
 
 '''
 model_name options: "static_ACP", "dynamic_ACP" -> only static works for now
@@ -184,7 +210,7 @@ flight_schedule = {
     3: (330, 100),  # Flight 3 departs at interval X with Y passengers
  }
 
-parameter_settings = {'p': 1, 'C': 500, 's': 100, 'h0': 0.1, 'l': 1} #'h0' decides the costs of a waiting line, 's' decides the costs of opening a desk
+parameter_settings = {'p': 1,  'C': 500, 's': 100, 'h0': 0.1, 'l': 1} #'h0' decides the costs of a waiting line, 's' decides the costs of opening a desk
 
 if __name__ == "__main__":
     '''
@@ -214,3 +240,5 @@ if __name__ == "__main__":
     #acp_optimization_dynamic.plot_queue()
     acp_optimization_schiphol_dynamic.optimize()
     acp_optimization_schiphol_dynamic.plot_queue()
+
+    q, I = acp_optimization_schiphol_dynamic.get_result_data()
