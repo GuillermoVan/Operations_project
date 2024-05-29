@@ -162,7 +162,6 @@ class ACP:
             # FOR VERIFICATION: Add vertical lines at t = 4 hours and t = 45 minutes before departure for each flight j
             #plt.axvline(x=self.flight_schedule[j][0]/(self.l*60) - 4 * 12, color='black', linestyle='--', label=f'First Check-in Limit for Flight {j}')
             #plt.axvline(x=self.flight_schedule[j][0]/(self.l*60) - 0.75 * 12, color='black', linestyle='--', label=f'Last Check-in Time for Flight {j}')
-
         plt.xlabel('Time Interval')
         plt.ylabel('Number of Passengers in Queue')
         plt.title('Number of Passengers in Queue over Time for Each Flight')
@@ -170,9 +169,8 @@ class ACP:
         plt.grid(True)
         plt.show()
 
-        I_values = [sum(self.I[j, t].X for j in range(self.J)) for t in range(self.N)]
+        q_values, I_values, B_values = self.get_result_data()
         plt.plot(range(self.N), I_values)
-
         plt.xlabel('Time Interval')
         plt.ylabel('Number of Passengers in Queue')
         plt.title('Number of Passengers in Queue over Time for all Flights Combined')
@@ -180,12 +178,18 @@ class ACP:
         plt.grid(True)
         plt.show()
 
-        q_values = [sum(self.q[j, t].X for j in range(self.J)) for t in range(self.N)]
         plt.plot(range(self.N), q_values)
-
         plt.xlabel('Time Interval')
         plt.ylabel('Number of Passengers Accepted')
         plt.title('Number of Passengers Accepted at Desk over Time for all Flights Combined')
+        plt.legend()
+        plt.grid(True)
+        plt.show()
+
+        plt.plot(range(self.N), B_values)
+        plt.xlabel('Time Interval')
+        plt.ylabel('Number of Desks Opened')
+        plt.title('Number of Desks Opened over Time')
         plt.legend()
         plt.grid(True)
         plt.show()
@@ -195,7 +199,8 @@ class ACP:
     def get_result_data(self):
         q = [sum(self.q[j, t].X for j in range(self.J)) for t in range(self.N)]
         I = [sum(self.I[j, t].X for j in range(self.J)) for t in range(self.N)]
-        return q, I
+        B = [self.B[t].X for t in range(self.N)]
+        return q, I, B
 
 '''
 model_name options: "static_ACP", "dynamic_ACP" -> only static works for now
@@ -240,6 +245,7 @@ if __name__ == "__main__":
     acp_optimization_schiphol_dynamic.optimize()
     acp_optimization_schiphol_dynamic.plot_queue()
 
-    q, I = acp_optimization_schiphol_dynamic.get_result_data()
+    q, I, B = acp_optimization_schiphol_dynamic.get_result_data()
     print(q)
     print(I)
+    print(B)
