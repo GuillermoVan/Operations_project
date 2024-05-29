@@ -14,13 +14,13 @@ class data:
 	             random_flag = True,
 	             random_scale = 10,
 
-	             t_interval = 5,
 	             mean_early_t = 120,
 	             arrival_std = 1,
 
 	             last_checkin = 45,
 	             earliest_checkin = 4*60,
 
+	             t_interval=5,
 	             tot_m=24 * 60,
 	             airline='KLM',
 	             data_loc = 'data 30_04_2024.xlsx'):
@@ -349,6 +349,6 @@ def tester():
 	#plot_data(d, too_early)
 	plot_total_passengers(d, too_early)
 
-tester()
+# tester()
 
 #print('hello')
