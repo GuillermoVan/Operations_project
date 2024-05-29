@@ -119,7 +119,7 @@ class ACP:
             #    print(f"{v.VarName} = {v.x}")
             print("Optimal solution found!")
             print(f"Objective Value = {self.model.ObjVal}")
-            self.objective = selff.model.ObjVal
+            self.objective = self.model.ObjVal
 
         elif self.model.status == GRB.INF_OR_UNBD:
             print("Model is infeasible or unbounded")
@@ -191,12 +191,6 @@ class ACP:
         plt.show()
 
         return
-
-    def get_result_data(self):
-        q = [sum(self.q[j, t].X for j in range(self.J)) for t in range(self.N)]
-        I = [sum(self.I[j, t].X for j in range(self.J)) for t in range(self.N)]
-
-        return q, I
 
 '''
 model_name options: "static_ACP", "dynamic_ACP" -> only static works for now
