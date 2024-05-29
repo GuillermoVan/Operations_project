@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import make_interp_spline
 import itertools
 class data:
-	def __init__(self, airline = 'KLM', t_interval = 5, tot_m = 24*60, mean_early_t = 120, arrival_std = 2, last_checkin = 45, earliest_checkin = 4*60, data_loc = 'data 30_04_2024.xlsx'):
+	def _init_(self, airline = 'KLM', t_interval = 5, tot_m = 24*60, mean_early_t = 120, arrival_std = 2, last_checkin = 45, earliest_checkin = 4*60, data_loc = 'data 30_04_2024.xlsx'):
 		self.airline = airline
 		self.t_interval = t_interval
 		self.tot_m = tot_m
@@ -114,7 +114,7 @@ class data:
 			earliest_checkin_index = max(0, (etd_minutes - self.earliest_checkin) // self.t_interval)
 			latest_checkin_index = min((etd_minutes - self.last_checkin) // self.t_interval, len(pax_dist) - 1)
 
-			#print('checkin avialble from index:', earliest_checkin_index, 'to index:', latest_checkin_index)
+			print('checkin avialble from index:', earliest_checkin_index, 'to index:', latest_checkin_index)
 			if earliest_checkin_index >= 0 and latest_checkin_index >= 0:
 				too_early.append(sum(pax_dist[:earliest_checkin_index]))
 				pax_dist[:earliest_checkin_index] = 0
@@ -151,6 +151,12 @@ class data:
 			T[index] = no_checkin_t
 		self.T = T
 
+	def get_departure_times(self):
+		departure_times = {}
+		for index, flight in self.flights.iterrows():
+			departure_times[index] = flight['ETD_minutes']
+		return departure_times
+
 	@staticmethod
 	def flights_to_d(flight_schedule, t_interval = 5, tot_m = 24*60, mean_early_t = 2*60, arrival_std = 0.5, last_checkin = 45, earliest_checkin = 4*60):
 		# flight_schedule = {
@@ -179,7 +185,7 @@ class data:
 			earliest_checkin_index = max(0, (etd_minutes - earliest_checkin) // t_interval)
 			latest_checkin_index = min((etd_minutes - last_checkin) // t_interval, len(pax_dist) - 1)
 
-			#print('checkin avialble from index:', earliest_checkin_index, 'to index:', latest_checkin_index)
+			print('checkin avialble from index:', earliest_checkin_index, 'to index:', latest_checkin_index)
 			if earliest_checkin_index >= 0 and latest_checkin_index >= 0:
 				too_early.append(sum(pax_dist[:earliest_checkin_index]))
 				pax_dist[:earliest_checkin_index] = 0
@@ -215,46 +221,87 @@ class data:
 #     1: (400, 100),  # Flight 1 departs at interval 48 (12 hours into the day)
 #     2: (500, 50)    # Flight 2 departs at interval 80 (20 hours into the day)
 # }
-#
-#
-# def plot_data(d, too_early):
-# 	# test_flights = {
-# 	#     0: (90, 100),  # Flight 0 departs at interval 16 (4 hours into the day)
-# 	#     1: (400, 100),  # Flight 1 departs at interval 48 (12 hours into the day)
-# 	#     2: (500, 50)    # Flight 2 departs at interval 80 (20 hours into the day)
-# 	# }
-# 	# d, too_early = data.flights_to_d(test_flights)
-# 	colors = itertools.cycle(['red', 'green', 'blue'])
-#
-# 	plt.figure(figsize=(10, 6))
-#
-# 	for flight_index in range(max(x for (x, _), _ in d.items()) + 1):
-# 		# Check if there are any data points for the current flight_index
-# 		data_points = [(time_bin, count) for (idx, time_bin), count in d.items() if idx == flight_index]
-# 		if not data_points:
-# 			continue  # Skip this iteration if no data points
-#
-# 		# Extract and sort time bins and counts
-# 		times, counts = zip(*sorted(data_points))
-#
-# 		# Scatter plot for data points
-# 		color = next(colors)
-# 		plt.scatter(times, counts, color=color, label=f'Flight {flight_index}', alpha=0.6, edgecolors='w')
-#
-# 		# Interpolate and plot smooth curve if there are enough points
-# 		#if len(times) > 1:
-# 		#	spline = make_interp_spline(times, counts, k=2)
-# 		#	smooth_times = np.linspace(min(times), max(times), 300)
-# 		#	plt.plot(smooth_times, spline(smooth_times), color=colors[flight_index])
-#
-# 	plt.legend()
-# 	plt.title('Passenger Arrivals by Flight and Time Interval')
-# 	plt.xlabel('Time Interval')
-# 	plt.ylabel('Number of Passengers')
-# 	plt.grid(True)
-# 	plt.show()
-#
-# 	print('too early', too_early)
-#
-#
-# # need to fix indices, add time or something, because now we rearanged. Could keep same indices but set all too early to 0.
+
+
+def plot_data(d, too_early):
+	# test_flights = {
+	#     0: (90, 100),  # Flight 0 departs at interval 16 (4 hours into the day)
+	#     1: (400, 100),  # Flight 1 departs at interval 48 (12 hours into the day)
+	#     2: (500, 50)    # Flight 2 departs at interval 80 (20 hours into the day)
+	# }
+	# d, too_early = data.flights_to_d(test_flights)
+	colors = itertools.cycle(['red', 'green', 'yellow', 'blue', 'purple', 'pink', 'cyan','orange'])
+
+	plt.figure(figsize=(10, 6))
+
+	for flight_index in range(max(x for (x, _), _ in d.items()) + 1): #used CHATCPT for plotting function
+		# Check if there are any data points for the current flight_index
+		data_points = [(time_bin, count) for (idx, time_bin), count in d.items() if idx == flight_index]
+		if not data_points:
+			continue  # Skip this iteration if no data points
+
+		# Extract and sort time bins and counts
+		times, counts = zip(*sorted(data_points))
+
+		# Scatter plot for data points
+		color = next(colors)
+		plt.scatter(times, counts, color=color, label=f'Flight {flight_index}', alpha=0.6, edgecolors='w')
+
+		# Interpolate and plot smooth curve if there are enough points
+		#if len(times) > 1:
+		#	spline = make_interp_spline(times, counts, k=2)
+		#	smooth_times = np.linspace(min(times), max(times), 300)
+		#	plt.plot(smooth_times, spline(smooth_times), color=colors[flight_index])
+
+	plt.legend()
+	plt.title('Passenger Arrivals by Flight and Time Interval')
+	plt.xlabel('Time Interval')
+	plt.ylabel('Number of Passengers')
+	plt.grid(True)
+	plt.show()
+
+	print('too early', too_early)
+
+def plot_total_passengers(d, too_early):
+    """
+    Plot the total number of passengers per time bin for all flights combined.
+
+    Parameters:
+    d (dict): A dictionary where the key is a tuple (flight_index, time_bin) and the value is the count of passengers.
+    too_early (int): An integer representing the number of passengers that arrived too early.
+    """
+    # Aggregate the passenger counts for each time bin across all flights
+    total_passengers_per_time_bin = {}
+    for (_, time_bin), count in d.items():
+        if time_bin not in total_passengers_per_time_bin:
+            total_passengers_per_time_bin[time_bin] = 0
+        total_passengers_per_time_bin[time_bin] += count
+
+    # Extract and sort time bins and total counts
+    sorted_time_bins = sorted(total_passengers_per_time_bin.keys())
+    total_counts = [total_passengers_per_time_bin[time_bin] for time_bin in sorted_time_bins]
+
+    # Plot the total number of passengers per time bin
+    plt.figure(figsize=(10, 6))
+    plt.plot(sorted_time_bins, total_counts, marker='o', linestyle='-', color='blue', alpha=0.6, label='Total Passengers')
+
+    plt.legend()
+    plt.title('Total Passenger Arrivals by Time Interval')
+    plt.xlabel('Time Interval')
+    plt.ylabel('Number of Passengers')
+    plt.grid(True)
+    plt.show()
+    print('too early', too_early)
+
+# need to fix indices, add time or something, because now we rearanged. Could keep same indices but set all too early to 0.
+def tester():
+	test_data = data()
+	#print(test_data.too_early)
+	too_early = test_data.too_early
+	d = test_data.d
+	#plot_data(d, too_early)
+	plot_total_passengers(d, too_early)
+
+# tester()
+
+#print('hello')
