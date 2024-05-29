@@ -1,6 +1,7 @@
 from gurobipy import Model, GRB
 from data import *
 import numpy as np
+from KPI_calculations import get_longest_queue_time
 
 class ACP:
     def __init__(self, model_name, T, l, parameter_settings, flight_schedule=None, data_schiphol=None, schiphol_case=False):
@@ -39,8 +40,11 @@ class ACP:
         self.add_constraints()
         self.set_objective()
 
+        self.t_interval = 5
+
     def create_passenger_flow(self, t_interval=5, tot_m=24 * 60, mean_early_t=2 * 60, arrival_std=0.5,
                  last_checkin=45, earliest_checkin=4 * 60):
+        self.t_interval = t_interval
 
         flight_schedule = self.flight_schedule
         d, too_early = data.flights_to_d(flight_schedule, t_interval, tot_m, mean_early_t, arrival_std, last_checkin, earliest_checkin)
@@ -194,15 +198,17 @@ class ACP:
         q_values = [sum(self.q[j, t].X for j in range(self.J)) for t in range(self.N)]
         I_values = [sum(self.I[j, t].X for j in range(self.J)) for t in range(self.N)]
 
-        # ToDo: function to determine maximum waiting time of all passengers, use q_values & I_values above
-        max_waiting_time = None
+        print('q (number of people who leave the queue per time step) :    ', q_values)
+        print('I (number of people in the queue per time step):    ', I_values)
+        max_waiting_time = get_longest_queue_time(q_values, I_values)
+        print('longest_queue_time in [min]:', max_waiting_time * self.t_interval)
+        print()
 
         objective = self.objective
         waiting_cost = sum(self.h[j] * self.I[j, t].X for j in range(self.J) for t in range(self.N))
         desk_cost = sum(self.st[t] * self.B[t].X for t in range(self.N)) * self.J
 
         return objective, waiting_cost, desk_cost, max_waiting_time
-
 
 '''
 model_name options: "static_ACP", "dynamic_ACP"
