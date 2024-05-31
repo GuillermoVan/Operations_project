@@ -39,20 +39,20 @@ def get_longest_queue_time(q, I):
 		queue.process_time_step(join_count, leave_count, current_time)
 
 	# Plotting part
-	join_counts = [0] + join_counts
-	leave_counts = q
-	net_difference = [join_counts[i] - leave_counts[i] for i in range(len(leave_counts))]
-	plt.figure(figsize=(12, 6))
-	plt.plot(range(len(join_counts)), join_counts, label='People Joining', marker='o')
-	plt.plot(range(len(leave_counts)), leave_counts, label='People Leaving', marker='x')
-	plt.plot(range(len(net_difference)), net_difference, label='Net Difference', marker='s')
-	plt.plot(range(len(I)), I, label='Current queue size', marker = 'v')
-	plt.xlabel('Time Step')
-	plt.ylabel('Number of People')
-	plt.title('Queue Dynamics')
-	plt.legend()
-	plt.grid(True)
-	plt.show()
+	# join_counts = [0] + join_counts
+	# leave_counts = q
+	# net_difference = [join_counts[i] - leave_counts[i] for i in range(len(leave_counts))]
+	# plt.figure(figsize=(12, 6))
+	# plt.plot(range(len(join_counts)), join_counts, label='People Joining', marker='o')
+	# plt.plot(range(len(leave_counts)), leave_counts, label='People Leaving', marker='x')
+	# plt.plot(range(len(net_difference)), net_difference, label='Net Difference', marker='s')
+	# plt.plot(range(len(I)), I, label='Current queue size', marker = 'v')
+	# plt.xlabel('Time Step')
+	# plt.ylabel('Number of People')
+	# plt.title('Queue Dynamics')
+	# plt.legend()
+	# plt.grid(True)
+	# plt.show()
 
 	# Get the maximum waiting time
 	max_wait = queue.max_waiting_time()

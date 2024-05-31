@@ -11,7 +11,7 @@ class data:
 	             full_random_min_pax = 50,
 	             full_random_max_pax = 300,
 
-	             random_flag = True,
+	             random_flag = False,
 	             random_scale = 10,
 
 	             mean_early_t = 120,
