@@ -13,7 +13,7 @@ class Sensitivity:
 
     def sensitivity_analysis(self):
         # Define the range for sensitivity analysis
-        sensitivity_range = [0.2, 1.0, 2]  # Adjust
+        sensitivity_range = [0.6, 1.0, 1.4]  # Adjust
         objective_list = []
         waiting_cost_list = []
         opening_cost_list = []
