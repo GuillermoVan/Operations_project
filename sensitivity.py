@@ -109,10 +109,11 @@ class Sensitivity:
     def sensitivity_analysis(self):
         # Define the range for sensitivity analysis
         # sensitivity_range = [0.5, 0.75, 1.0, 1.25, 1.50]  # Adjust
-        sensitivity_range = [1.0]
+        sensitivity_range = [0.5, 1.0, 1.5]
         # parameters_to_test = ['p', 'C', 's_open', 's_operate', 'h0', 'l']
-        parameters_to_test = ['p', 's_open', 's_operate', 'h0', 'l']
-        
+        # parameters_to_test = ['p', 's_open', 's_operate', 'h0', 'l']
+        parameters_to_test = ['s_open', 's_operate', 'h0']     # THE ONLY PARAMETERS THAT CAN BE CHANGED
+
         for param in parameters_to_test:
             print(f"\nPerforming sensitivity analysis for parameter: {param}")
             objective_list = []
