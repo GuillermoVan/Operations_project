@@ -95,6 +95,7 @@
 
 
 from gurobipy import Model, GRB
+from sympy import plot
 from data import *
 from Model import *
 
@@ -108,11 +109,13 @@ class Sensitivity:
 
     def sensitivity_analysis(self):
         # Define the range for sensitivity analysis
-        # sensitivity_range = [0.5, 0.75, 1.0, 1.25, 1.50]  # Adjust
-        sensitivity_range = [0.5, 1.0, 1.5]
-        # parameters_to_test = ['p', 'C', 's_open', 's_operate', 'h0', 'l']
-        # parameters_to_test = ['p', 's_open', 's_operate', 'h0', 'l']
-        parameters_to_test = ['s_open', 's_operate', 'h0']     # THE ONLY PARAMETERS THAT CAN BE CHANGED
+        sensitivity_range = [0.7, 0.8, 0.9, 1.0, 1.1, 1.2]
+
+        # Choose parameters for sensitivity
+
+        # parameters_to_test = ['p', 'C', 's_open', 's_operate', 'h0', 'l']         # ALL PARAMETERS (p/l not possible)
+        # parameters_to_test = ['s_open', 's_operate', 'h0']                        # COST PARAMTERS
+        parameters_to_test = ['C']                                                  # TOTAL DESKS
 
         for param in parameters_to_test:
             print(f"\nPerforming sensitivity analysis for parameter: {param}")
@@ -145,16 +148,34 @@ class Sensitivity:
             print('opening cost:', opening_cost_list)
             print('operating cost:', operating_cost_list)
             print('max waiting time:', max_waiting_time_list)
+
+        if param == 'C':
+            plt.plot(sensitivity_range, objective_list)
+            plt.axvline(0.67, color='black', linestyle='--', label=f'Minimum C value')
+            plt.xlabel('Factor of C')
+            plt.ylabel('Objective Value')
+            plt.title('Sensitivity analysis of C')
+            plt.grid(True)
+            plt.show()
+
     
     def apply_sensitivity_factor(self, parameter, factor):
         # Create a copy of the original parameter settings
         parameter_settings_sensitivity = self.parameter_settings.copy()
         
+        if parameter == 'C':
+            parameter_settings_sensitivity['C'] = int(self.parameter_settings[parameter] * factor)
+                    
+
         # Apply sensitivity factor to the specified parameter
-        if parameter != 'minimum_desk_time':
+        if parameter != 'minimum_desk_time' and parameter != 'C':
             parameter_settings_sensitivity[parameter] = self.parameter_settings[parameter] * factor
         
         return parameter_settings_sensitivity
+    
+
+    def plot_C(self, parameter, factor):
+        plt.plot(objective_lst)
 
 # Param settings
 parameter_settings = {'minimum_desk_time': 4, 'p': 1, 'C': 400, 's_open': 100, 's_operate': 10, 'h0': 10, 'l': 1}
