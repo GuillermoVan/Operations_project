@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import make_interp_spline
 import itertools
 class data:
-	def __init__(self, airline = 'KLM', t_interval = 5, tot_m = 24*60, mean_early_t = 120, arrival_std = 2, last_checkin = 45, earliest_checkin = 4*60, data_loc = 'data 30_04_2024.xlsx'):
+	def __init__(self, airline = 'KLM', t_interval = 5, tot_m = 24*60, mean_early_t = 120, arrival_std = 2, last_checkin = 45, earliest_checkin = 4*60, data_loc = 'data 03_06_2024.xlsx'): #data_loc = 'data 30_04_2024.xlsx'
 		self.airline = airline
 		self.t_interval = t_interval
 		self.tot_m = tot_m

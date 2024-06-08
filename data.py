@@ -23,7 +23,7 @@ class data:
 	             t_interval=5,
 	             tot_m=24 * 60,
 	             airline='KLM',
-	             data_loc = 'data 30_04_2024.xlsx'):
+	             data_loc = 'data 30_04_2024.xlsx'): # 'data 03_06_2024.xlsx'
 		self.airline = airline
 		self.t_interval = t_interval
 		self.tot_m = tot_m
@@ -215,6 +215,7 @@ class data:
 		#valid_pax_dist = []
 		d = {}
 		too_early = []
+		too_late = []
 		count = 0
 
 		for index, (etd_minutes, total_passengers) in flight_schedule.items():
@@ -235,6 +236,7 @@ class data:
 			if earliest_checkin_index >= 0 and latest_checkin_index >= 0:
 				too_early.append(sum(pax_dist[:earliest_checkin_index]))
 				pax_dist[:earliest_checkin_index] = 0
+				too_late.append(sum(pax_dist[latest_checkin_index:]))
 				pax_dist[latest_checkin_index+1:] = 0
 				valid_pax_dist = pax_dist
 				# valid_pax_dist = pax_dist[earliest_checkin_index:latest_checkin_index]
@@ -253,6 +255,9 @@ class data:
 		for i, sublist in d.items():
 			for j in range(len(sublist)):
 				new_d[(i, j)] = sublist[j]
+
+		print('too late', too_late)
+		print('total too late', sum(too_late))
 
 		return new_d, too_early
 
@@ -346,9 +351,9 @@ def tester():
 	too_early = test_data.too_early
 	d = test_data.d
 	# print(d)
-	#plot_data(d, too_early)
+	plot_data(d, too_early)
 	plot_total_passengers(d, too_early)
 
-# tester()
+tester()
 
 #print('hello')

@@ -303,7 +303,7 @@ if __name__ == "__main__":
     # SCHIPHOL SCENARIO
     schiphol = True
     if schiphol == True:
-        amount_simulations = 10
+        amount_simulations = 1
         total_passengers_lst = []
         objective_lst, waiting_cost_lst, desk_cost_lst, max_waiting_time_lst = [], [], [], []
         for passenger_scale in np.linspace(0.5, 1.5, amount_simulations):
